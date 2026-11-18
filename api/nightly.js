@@ -50,18 +50,20 @@ async function cleanMode(mode, log) {
 }
 
 async function prewarm(deadline, log) {
+  // toilets first (the report needs them), then the other modes; rotates through all areas over several nights
   const combos = [];
-  AREAS.forEach((a) => ["toilet", "safe", "medical", "police"].forEach((m) => combos.push([m, a[1], a[2]])));
+  ["toilet", "safe", "medical", "police"].forEach((m) => AREAS.forEach((a) => combos.push([m, a[1], a[2]])));
   const [cur] = await redis([["GET", "nightly:cursor"]]);
-  let i = parseInt(cur || "0", 10) || 0, done = 0;
-  while (Date.now() < deadline && done < combos.length) {
+  let i = parseInt(cur || "0", 10) || 0, done = 0, fails = 0;
+  while (Date.now() < deadline - 3000 && done < combos.length && fails < 3) {
     const [m, lat, lon] = combos[i % combos.length];
     const q = buildQuery(m, lat, lon, false), key = places.cacheKey(q);
     const [ttl] = await redis([["TTL", key]]);
     if (!(ttl > DAY / 1000)) {
-      try { const text = await Promise.race([places.fromOverpass(q), new Promise((_, rej) => setTimeout(() => rej(new Error("slow")), Math.max(1000, deadline - Date.now())))]);
+      const budget = Math.min(25000, deadline - Date.now());
+      try { const text = await Promise.race([places.fromOverpass(q), new Promise((_, rej) => setTimeout(() => rej(new Error("slow")), budget))]);
         if (text.length < 900000) { await redis([["SET", key, text, "EX", places.TTL]]); log.prewarmed++; } }
-      catch (e) { log.prewarmFailed++; break; } // map servers busy – try again tomorrow
+      catch (e) { log.prewarmFailed++; fails++; }
     }
     i++; done++;
   }
@@ -106,7 +108,7 @@ module.exports = async (req, res) => {
   const start = Date.now(), log = { flagged: 0, merged: 0, prewarmed: 0, prewarmFailed: 0 };
   const byMode = {};
   for (const m of MODES) { try { byMode[m] = await cleanMode(m, log); } catch (e) { log["error_" + m] = String(e.message); } }
-  try { await prewarm(start + 38000, log); } catch (e) { log.prewarmError = String(e.message); }
+  try { await prewarm(start + 45000, log); } catch (e) { log.prewarmError = String(e.message); }
   try { const report = await buildReport(byMode); await redis([["SET", "report:latest", JSON.stringify(report)]]); log.report = "ok"; } catch (e) { log.reportError = String(e.message); }
   const summary = { ranAt: start, tookMs: Date.now() - start, ...log };
   await redis([["SET", "nightly:last", JSON.stringify(summary)]]);
