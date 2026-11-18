@@ -51,6 +51,22 @@ async function fromOverpass(q) {
 }
 
 module.exports = async (req, res) => {
+  // GET /api/places?health=1 – checks each public map server with a tiny fixed query (no user data)
+  if (req.method === "GET" && req.query && req.query.health) {
+    const q = '[out:json][timeout:20];nwr["amenity"="police"](around:1500,19.12,72.84);out center tags 5;';
+    const out = { cache: !!(URL_ && TOKEN), servers: [] };
+    await Promise.all(ENDPOINTS.map(async (ep) => {
+      const t = Date.now();
+      try {
+        const ctl = new AbortController(); const to = setTimeout(() => ctl.abort(), 20000);
+        const r = await fetch(ep, { method: "POST", body: "data=" + encodeURIComponent(q), headers: { "Content-Type": "application/x-www-form-urlencoded", "User-Agent": "SafeStopMumbai/1.0 (+https://safestop-mumbai.vercel.app)" }, signal: ctl.signal });
+        clearTimeout(to); const txt = await r.text();
+        out.servers.push({ ep, status: r.status, ms: Date.now() - t, ok: txt.startsWith("{"), sample: txt.slice(0, 120) });
+      } catch (e) { out.servers.push({ ep, error: String(e.message || e), ms: Date.now() - t }); }
+    }));
+    res.setHeader("Cache-Control", "no-store");
+    return res.status(200).json(out);
+  }
   if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed" });
   const b = typeof req.body === "string" ? JSON.parse(req.body || "{}") : req.body || {};
   const q = b.q;
