@@ -892,8 +892,8 @@ const medF=new Set();
 const modeOf=p=>p.kind==="police"?"police":p.kind==="medical"?"medical":p.kind==="safe"?"safe":p.kind==="hazard"?"hazard":"toilet";
 const safeF=new Set();
 const SAFE={police:["🚓","Police",.65],hospital:["🏥","Hospital",.7],fuel:["⛽","Petrol pump",.9],pharmacy:["💊","24-hr chemist",.8],station:["🚉","Station",1.1],shop:["🏪","24-hr shop / café",.85],other:["📍","Safe place",.9]};
-const safeIcon=p=>(SAFE[p.type]||SAFE.other)[0], safeLabel=p=>(SAFE[p.type]||SAFE.other)[1];
-const staffed=p=>p.type==="police"||p.type==="hospital";
+const safeIcon=p=>p.type==="hospital"&&p.big===false?"🩺":(SAFE[p.type]||SAFE.other)[0], safeLabel=p=>p.type==="hospital"&&p.big===false?"Clinic / small hospital":(SAFE[p.type]||SAFE.other)[1];
+const staffed=p=>p.type==="police"||(p.type==="hospital"&&p.big!==false);
 const medIcon=p=>p.type==="hospital"?"🏥":p.type==="clinic"?"🩺":"💊";
 const medLabel=p=>p.type==="hospital"?"Hospital":p.type==="clinic"?"Clinic":"Medical store";
 let mode=store.get("mode","toilet"), me=null, places=[], who="any", filters=new Set(), map=null, layer=null, meMarker=null, addPin=null, addLatLng=null;
@@ -986,7 +986,10 @@ function normSafe(el){const tg=el.tags||{};const lat=el.lat??el.center?.lat, lon
   const a=tg.amenity||"";
   const type=a==="police"?"police":a==="hospital"?"hospital":a==="fuel"?"fuel":a==="pharmacy"?"pharmacy":tg.railway==="station"?"station":"shop";
   const nm=tg.name||tg["name:en"]||(SAFE[type]||SAFE.other)[1];
-  return {id:el.type[0]+el.id,lat,lon,kind:"safe",type,name:nm,brand:tg.brand||"",phone:tg.phone||tg["contact:phone"]||"",hours:tg.opening_hours||(staffed({type})?"24/7":""),lit:tg.lit==="yes",tags:tg}}
+  // Many small doctors' clinics are tagged "hospital" on the map. Only count a hospital as staffed all night
+  // if it has a casualty/emergency department, is marked 24/7, or is clearly a hospital / nursing home by name.
+  const big=type!=="hospital"?undefined:(tg.emergency==="yes"||tg.opening_hours==="24/7"||(/hospital|nursing|trauma|medical cent|sanatorium|maternity/i.test(nm)&&!/^\s*dr\.?\s/i.test(nm)));
+  return {id:el.type[0]+el.id,lat,lon,kind:"safe",type,big,name:nm,brand:tg.brand||"",phone:tg.phone||tg["contact:phone"]||"",hours:tg.opening_hours||(type==="police"||big?"24/7":""),lit:tg.lit==="yes",tags:tg}}
 function normMed(el){const tg=el.tags||{};const lat=el.lat??el.center?.lat, lon=el.lon??el.center?.lon;
   const a=tg.amenity||"", h=tg.healthcare||"";
   const type=(a==="hospital"||h==="hospital")?"hospital":(a==="pharmacy"||h==="pharmacy"||tg.shop==="chemist")?"pharmacy":"clinic";
@@ -1053,7 +1056,7 @@ function commFactor(p){const hf=(p.kind==="safe"&&me&&pathNearHazard(me,p))?1.6:
 function ownScore(p){
   let d=p.dist; const rep=reports[p.id]||{};
   if(p.kind==="medical"){if(rep.closed||rep.wrong)d*=3; return d}
-  if(p.kind==="safe"){d*=(SAFE[p.type]||SAFE.other)[2]; if(p.hours==="24/7"&&!staffed(p))d*=.85; if(p.lit)d*=.9; if(rep.closed)d*=3; if(rep.unsafe||rep.dark)d*=3; if(rep.good)d*=.8; return d}
+  if(p.kind==="safe"){d*=(SAFE[p.type]||SAFE.other)[2]; if(p.type==="hospital"&&p.big===false)d*=1.4; if(p.hours==="24/7"&&!staffed(p))d*=.85; if(p.lit)d*=.9; if(rep.closed)d*=3; if(rep.unsafe||rep.dark)d*=3; if(rep.good)d*=.8; return d}
   if(p.kind==="police"){if(p.chowki)d*=1.1; if(rep.closed||rep.wrong)d*=3; return d}
   if(p.backup)d*=1.6;
   if(who==="woman"&&p.female==="yes")d*=.8;
@@ -1163,7 +1166,9 @@ function openSafe(p){
 }
 function emergencySafe(){
   const v=visible().filter(p=>{const r=reports[p.id]||{};return !r.closed&&!r.unsafe});
-  const best=v[0], alts=v.slice(1,3), staffedNear=v.find(staffed);
+  // Prefer a place that is surely open at night (police, real hospital, confirmed 24 hrs) unless it's much further.
+  const sure=v.find(p=>staffed(p)||p.hours==="24/7");
+  const best=sure&&v[0]&&sure.dist<=v[0].dist+600?sure:v[0], alts=v.filter(p=>p!==best).slice(0,2), staffedNear=v.find(staffed);
   sheet(`<h2>🌙 ${t("near_s")}</h2>
    <div class="grid2"><a class="btn red" href="tel:112">📞 Call 112</a><a class="btn call112" href="tel:1091">📞 1091 Women</a></div>
    <a class="btn wa" href="https://wa.me/?text=${encodeURIComponent(locMsg())}" target="_blank" rel="noopener">📍 Send my location on WhatsApp</a>
