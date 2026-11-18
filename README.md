@@ -1,5 +1,7 @@
 # SafeStop Mumbai – find a public toilet fast
 
+**Live:** https://safestop-mumbai.vercel.app (Vercel project feroz-shaikhs-projects/safestop-mumbai, deployed from C:\safestop with `npx vercel --prod`)
+
 A free mobile web app (installable to the home screen) for finding the nearest public toilet in Mumbai. It is built with women, elderly people and children in mind.
 
 ## Features
