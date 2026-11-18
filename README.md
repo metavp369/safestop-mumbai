@@ -1,10 +1,11 @@
-# SafeStop Mumbai – find a public toilet, police station or hospital/medical store fast
+# SafeStop Mumbai – toilets, police, medical help and safe spots, fast
 
 **Live:** https://safestop-mumbai.vercel.app (Vercel project feroz-shaikhs-projects/safestop-mumbai, deployed from C:\safestop with `npx vercel --prod`)
 
 A free mobile web app (installable to the home screen) for finding the nearest public toilet in Mumbai. It is built with women, elderly people and children in mind.
 
 ## Features
+- **🌙 Safe spot mode (women at night)** – one combined list of places usually open or staffed all night: police chowkis/stations, hospitals, petrol pumps, 24-hr chemists, shops and cafés, and stations. Police and hospitals rank highest; filters for confirmed 24 hrs or police & hospitals only. Emergency screen: Call 112, Call 1091 (women), send location on WhatsApp, walk to nearest safe spot. Users rate places after a visit (felt safe / dark / closed / unsafe) and can add their own
 - **🏥 Medical mode** – nearest hospital, clinic or medical store; filters for hospitals / medical stores / clinics / 24 hrs / casualty; emergency screen shows Call 108, the nearest hospital (preferring one with casualty) and the nearest medical store; users can add missing places with type, phone and 24-hr flag
 - **🚓 Police mode** – switch at the top to find the nearest police station or chowki. One-tap call to the station (if its number is on the map) or 112, walk or auto/car directions, report closed or wrong location, and add a missing station with its phone number
 - **"I need a toilet NOW"** – one tap finds the nearest usable toilet and opens walking directions
