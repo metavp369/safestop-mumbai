@@ -14,14 +14,17 @@ function findEnv(suffixes) {
 const URL_ = findEnv(["KV_REST_API_URL", "UPSTASH_REDIS_REST_URL"]);
 const TOKEN = findEnv(["KV_REST_API_TOKEN", "UPSTASH_REDIS_REST_TOKEN"]);
 
-const MODES = { toilet: "toilet", police: "police", medical: "medical", safe: "safe" };
+const MODES = { toilet: "toilet", police: "police", medical: "medical", safe: "safe", hazard: "hazard" };
 const TYPES = {
   toilet: [""],
   police: [""],
   medical: ["pharmacy", "hospital", "clinic"],
   safe: ["shop", "fuel", "police", "hospital", "pharmacy", "other"],
+  hazard: ["dark", "streetlight", "harassment", "deserted", "other"],
 };
-const FLAGS = ["closed", "dirty", "nowater", "unsafe", "wrong", "dark", "good"];
+const HAZARD_NAMES = { dark: "Dark lane / no lights", streetlight: "Broken streetlight", harassment: "Harassment reported", deserted: "Deserted at night", other: "Feels unsafe" };
+const HAZARD_MAX_AGE = 180 * 24 * 3600 * 1000; // reports fade after ~6 months
+const FLAGS = ["closed", "dirty", "nowater", "unsafe", "wrong", "dark", "good", "confirm", "fixed"];
 const BBOX = { minLat: 18.85, maxLat: 19.5, minLon: 72.7, maxLon: 73.25 }; // Mumbai Metropolitan Region
 const LIMITS = { add: 15, vote: 300, delete: 30, read: 600 }; // per IP per hour
 
@@ -52,6 +55,7 @@ async function rateLimit(ip, action) {
 function cleanPlace(p, mode) {
   const lat = num(p.lat), lon = num(p.lon);
   if (!isFinite(lat) || !isFinite(lon) || !inBox(lat, lon)) throw new Error("Location must be in Mumbai");
+  if (mode === "hazard") p = { ...p, name: HAZARD_NAMES[str(p.type, 20)] || "Unsafe spot" };
   const name = str(p.name, 80);
   if (name.length < 2) throw new Error("Name is required");
   const type = str(p.type, 20);
@@ -68,6 +72,7 @@ function cleanPlace(p, mode) {
   if (mode === "police") { out.chowki = !!p.chowki; out.womenDesk = !!p.womenDesk; }
   if (mode === "medical") out.emergency = !!p.emergency;
   if (mode === "safe") out.lit = !!p.lit;
+  if (mode === "hazard") { out.when = p.when === "always" ? "always" : "night"; delete out.phone; }
   out.hours = p.hours === "24/7" ? "24/7" : "";
   return out;
 }
@@ -103,7 +108,9 @@ module.exports = async (req, res) => {
       if (!ids || !ids.length) return res.json({ places: [] });
       const [vals] = await redis([["MGET", ...ids.map((id) => "p:" + id)]]);
       const places = (vals || []).map((v) => { try { return JSON.parse(v); } catch (e) { return null; } })
-        .filter(Boolean).map(({ owner, ...p }) => p); // never expose device ids
+        .filter(Boolean)
+        .filter((p) => mode !== "hazard" || Date.now() - (p.at || 0) < HAZARD_MAX_AGE)
+        .map(({ owner, ...p }) => p); // never expose device ids
       return res.json({ places });
     }
 
@@ -132,6 +139,7 @@ module.exports = async (req, res) => {
       const p = cleanPlace(b.place || {}, mode);
       const id = "c" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
       const kind = mode === "toilet" ? undefined : mode;
+      if (mode === "hazard") p.at = Date.now();
       const rec = { id, kind, ...p, community: true, mode, at: Date.now(), owner: device };
       await redis([["SET", "p:" + id, JSON.stringify(rec)], ["GEOADD", "geo:" + mode, p.lon, p.lat, id]]);
       return res.json({ id });

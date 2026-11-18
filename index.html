@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5">
 <meta name="theme-color" content="#0f766e">
-<title>SafeStop Mumbai – Toilets, Police, Medical & Safe Spots</title>
+<title>SafeStop Mumbai – Toilets, Police, Medical, Safe Spots & Safe Routes</title>
 <link rel="manifest" href="manifest.json">
 <style>/* required styles */
 
@@ -745,11 +745,23 @@ label.f input,label.f select{display:block;width:100%;font:inherit;padding:10px;
 .big-card .d{font-size:2em;font-weight:800;color:var(--red)}
 .copybox{font-size:.8em;background:#f1f5f9;border-radius:8px;padding:8px;margin-top:8px;word-break:break-all}
 body:not(.police) .police-only{display:none!important}body:not(.police):not(.medical):not(.safe) .svc-only{display:none!important}body:not(.safe) .safe-only{display:none!important}body:not(.medical) .med-only{display:none!important}
+.hz{width:28px;height:28px;border-radius:8px;background:#fef2f2;border:2px solid #dc2626;display:grid;place-items:center;font-size:15px;box-shadow:0 2px 6px rgba(0,0,0,.25)}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px}.btn.sm{padding:10px 6px;font-size:.85em;margin-top:6px}
+.rrow{border:1px dashed var(--line);border-radius:10px;padding:10px;margin-top:6px;font-size:.92em;background:#fff}
+.srch{display:flex;gap:6px;margin-top:8px}.srch input{flex:1;font:inherit;padding:10px;border:1px solid var(--line);border-radius:10px}.srch .btn{width:auto;margin:0;padding:10px 14px}
+.cform{display:grid;gap:6px;margin-top:8px}.cform input{font:inherit;padding:10px;border:1px solid var(--line);border-radius:10px}
+label.f textarea{display:block;width:100%;font:inherit;padding:10px;border:1px solid var(--line);border-radius:10px;margin-top:4px}
+.drv{position:fixed;inset:0;background:#fef08a;z-index:4000;display:flex;align-items:center;justify-content:center;padding:20px}
+.drv-in{max-width:620px;width:100%;text-align:center}.drv-h{font-size:1.4em;font-weight:700;color:#713f12;margin-bottom:16px}.drv-h small{font-weight:500;font-size:.7em}
+.drv-a{font-size:2em;font-weight:800;line-height:1.25;color:#111;margin-bottom:12px;word-wrap:break-word}.drv-l{font-size:1.3em;color:#422006;margin-bottom:14px}
+.clist .help a{font-size:.85em;padding:6px 10px}
+header h1{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;font-size:1.05em}header .hb{padding:6px 8px}
 </style>
 </head>
 <body>
 <header>
   <h1>🚻 <span data-t="app">SafeStop Mumbai</span></h1>
+  <button class="hb" id="homeBtn" title="Take me home">🏠</button>
   <button class="hb" id="langBtn">EN / हि / म</button>
   <button class="hb" id="bigBtn" title="Large text">A+</button>
 </header>
@@ -786,6 +798,7 @@ body:not(.police) .police-only{display:none!important}body:not(.police):not(.med
   <div class="chips safe-only" id="safeChips">
     <button class="chip" data-s="h24">✅ Confirmed 24 hrs</button>
     <button class="chip" data-s="staffed">👮 Police & hospitals only</button>
+    <button class="chip" id="hzBtn" style="border-color:#dc2626;color:#dc2626">⚠️ Report unsafe spot</button>
   </div>
   <div class="loc">
     <select id="area"></select>
@@ -797,11 +810,24 @@ body:not(.police) .police-only{display:none!important}body:not(.police):not(.med
   <div id="map"></div>
   <div class="tabs">
     <button class="on" data-tab="list" data-t="t_list">Nearby</button>
+    <button data-tab="route" data-t="t_route">Route</button>
     <button data-tab="saved" data-t="t_saved">Saved ⭐</button>
     <button data-tab="add" data-t="t_add">+ Add</button>
-    <button data-tab="info" data-t="t_info">Help</button>
+    <button data-tab="info" data-t="t_info">Me</button>
   </div>
   <div class="pane on" id="p-list"><div class="status" id="status">Choose your area or tap “My location”.</div><div id="list"></div></div>
+  <div class="pane" id="p-route">
+    <div class="tip">🧭 <b>Safe route</b>: check a walk you make often, like a child's way to school, tuition or the station. See police chowkis, hospitals, clinics, chemists, petrol pumps and toilets along the way, plus unsafe spots other users have reported.</div>
+    <div class="sec">From</div><div class="rrow" id="rFrom"></div>
+    <div class="grid3"><button class="btn out sm" data-from="me">📍 Me</button><button class="btn out sm" data-from="home">🏠 Home</button><button class="btn out sm" data-from="pick">🗺 On map</button></div>
+    <div class="sec">To</div><div class="rrow" id="rTo"></div>
+    <form id="rSearch" class="srch"><input id="rQ" placeholder="Search school, station, area…" maxlength="80"><button class="btn pri" type="submit">Search</button></form>
+    <div id="rResults"></div>
+    <div class="grid3"><button class="btn out sm" data-to="home">🏠 Home</button><button class="btn out sm" data-to="pick">🗺 On map</button><button class="btn out sm" data-to="me">📍 Me</button></div>
+    <button class="btn pri" id="rGo">🧭 Show safe route</button>
+    <div id="rOut"></div>
+    <div class="sec">⭐ Saved routes</div><div id="rSaved"></div>
+  </div>
   <div class="pane" id="p-saved"><div id="savedList"></div></div>
   <div class="pane" id="p-add">
     <div class="tip" id="addTip">Know a toilet that isn't listed? Tap on the map to drop a pin (or use your current spot), fill in what you know and save it. It is shared with everyone using SafeStop.</div>
@@ -846,11 +872,11 @@ const store={get(k,d){try{const v=localStorage.getItem("ss_"+k);return v?JSON.pa
 
 /* ---------- i18n ---------- */
 const T={
-en:{app:"SafeStop Mumbai",m_safe:"Safe spot",emg_s:"Find a safe spot NOW",near_s:"Nearest safe spot",m_med:"Medical",emg_m:"Nearest hospital / medical NOW",near_m:"Nearest medical help",call_p:"Call",m_toilet:"Toilets",m_police:"Police",emg_p:"Nearest police station NOW",near_p:"Nearest police station",call:"Call station",emg:"I need a toilet NOW",any:"Anyone",woman:"Woman",elder:"Elderly",child:"Child",f_women:"♀ Women's",f_access:"♿ Accessible",f_baby:"🍼 Baby change",f_free:"₹0 Free",f_24:"🌙 24 hrs",f_west:"🚽 Western seat",f_backup:"⛽ Show backups",gps:"My location",t_list:"Nearby",t_saved:"Saved ⭐",t_add:"+ Add",t_info:"Help",go:"Start walking directions",near:"Nearest toilet",walk:"min walk",save:"Save toilet",usehere:"Use my current spot",name:"Name / landmark",pinloc:"Location",
+en:{app:"SafeStop Mumbai",t_route:"Route",m_safe:"Safe spot",emg_s:"Find a safe spot NOW",near_s:"Nearest safe spot",m_med:"Medical",emg_m:"Nearest hospital / medical NOW",near_m:"Nearest medical help",call_p:"Call",m_toilet:"Toilets",m_police:"Police",emg_p:"Nearest police station NOW",near_p:"Nearest police station",call:"Call station",emg:"I need a toilet NOW",any:"Anyone",woman:"Woman",elder:"Elderly",child:"Child",f_women:"♀ Women's",f_access:"♿ Accessible",f_baby:"🍼 Baby change",f_free:"₹0 Free",f_24:"🌙 24 hrs",f_west:"🚽 Western seat",f_backup:"⛽ Show backups",gps:"My location",t_list:"Nearby",t_saved:"Saved ⭐",t_add:"+ Add",t_info:"Me",go:"Start walking directions",near:"Nearest toilet",walk:"min walk",save:"Save toilet",usehere:"Use my current spot",name:"Name / landmark",pinloc:"Location",
  add_tip:"Know a toilet that isn't listed? Tap on the map to drop a pin (or use your current spot), fill in what you know and save it. It is shared with everyone using SafeStop."},
-hi:{app:"सेफस्टॉप मुंबई",m_safe:"सुरक्षित जगह",emg_s:"अभी सुरक्षित जगह खोजें",near_s:"सबसे पास की सुरक्षित जगह",m_med:"मेडिकल",emg_m:"सबसे पास का अस्पताल / मेडिकल",near_m:"सबसे पास की मेडिकल मदद",call_p:"कॉल करें",m_toilet:"शौचालय",m_police:"पुलिस",emg_p:"सबसे पास का पुलिस स्टेशन",near_p:"सबसे पास का पुलिस स्टेशन",call:"स्टेशन को कॉल करें",emg:"मुझे अभी शौचालय चाहिए",any:"कोई भी",woman:"महिला",elder:"बुज़ुर्ग",child:"बच्चा",f_women:"♀ महिलाओं के लिए",f_access:"♿ व्हीलचेयर",f_baby:"🍼 बेबी चेंजिंग",f_free:"₹0 मुफ़्त",f_24:"🌙 24 घंटे",f_west:"🚽 वेस्टर्न सीट",f_backup:"⛽ विकल्प दिखाएँ",gps:"मेरी लोकेशन",t_list:"आस-पास",t_saved:"सेव ⭐",t_add:"+ जोड़ें",t_info:"मदद",go:"पैदल रास्ता दिखाएँ",near:"सबसे पास का शौचालय",walk:"मिनट पैदल",save:"सेव करें",usehere:"मेरी जगह इस्तेमाल करें",name:"नाम / पहचान",pinloc:"जगह",
+hi:{app:"सेफस्टॉप मुंबई",t_route:"रास्ता",m_safe:"सुरक्षित जगह",emg_s:"अभी सुरक्षित जगह खोजें",near_s:"सबसे पास की सुरक्षित जगह",m_med:"मेडिकल",emg_m:"सबसे पास का अस्पताल / मेडिकल",near_m:"सबसे पास की मेडिकल मदद",call_p:"कॉल करें",m_toilet:"शौचालय",m_police:"पुलिस",emg_p:"सबसे पास का पुलिस स्टेशन",near_p:"सबसे पास का पुलिस स्टेशन",call:"स्टेशन को कॉल करें",emg:"मुझे अभी शौचालय चाहिए",any:"कोई भी",woman:"महिला",elder:"बुज़ुर्ग",child:"बच्चा",f_women:"♀ महिलाओं के लिए",f_access:"♿ व्हीलचेयर",f_baby:"🍼 बेबी चेंजिंग",f_free:"₹0 मुफ़्त",f_24:"🌙 24 घंटे",f_west:"🚽 वेस्टर्न सीट",f_backup:"⛽ विकल्प दिखाएँ",gps:"मेरी लोकेशन",t_list:"आस-पास",t_saved:"सेव ⭐",t_add:"+ जोड़ें",t_info:"मैं",go:"पैदल रास्ता दिखाएँ",near:"सबसे पास का शौचालय",walk:"मिनट पैदल",save:"सेव करें",usehere:"मेरी जगह इस्तेमाल करें",name:"नाम / पहचान",pinloc:"जगह",
  add_tip:"कोई शौचालय सूची में नहीं है? मैप पर टैप करके पिन लगाएँ, जानकारी भरें और सेव करें। यह सभी SafeStop यूज़र्स को दिखेगा।"},
-mr:{app:"सेफस्टॉप मुंबई",m_safe:"सुरक्षित जागा",emg_s:"आत्ता सुरक्षित जागा शोधा",near_s:"सर्वात जवळची सुरक्षित जागा",m_med:"मेडिकल",emg_m:"सर्वात जवळचे हॉस्पिटल / मेडिकल",near_m:"सर्वात जवळची वैद्यकीय मदत",call_p:"कॉल करा",m_toilet:"शौचालय",m_police:"पोलीस",emg_p:"सर्वात जवळचे पोलीस स्टेशन",near_p:"सर्वात जवळचे पोलीस स्टेशन",call:"स्टेशनला कॉल करा",emg:"मला आत्ता शौचालय हवे",any:"कोणीही",woman:"महिला",elder:"ज्येष्ठ",child:"मूल",f_women:"♀ महिलांसाठी",f_access:"♿ व्हीलचेअर",f_baby:"🍼 बेबी चेंजिंग",f_free:"₹0 मोफत",f_24:"🌙 24 तास",f_west:"🚽 वेस्टर्न सीट",f_backup:"⛽ पर्याय दाखवा",gps:"माझे ठिकाण",t_list:"जवळपास",t_saved:"सेव्ह ⭐",t_add:"+ जोडा",t_info:"मदत",go:"चालत जाण्याचा मार्ग",near:"सर्वात जवळचे शौचालय",walk:"मिनिटे चालत",save:"सेव्ह करा",usehere:"माझे ठिकाण वापरा",name:"नाव / खूण",pinloc:"ठिकाण",
+mr:{app:"सेफस्टॉप मुंबई",t_route:"मार्ग",m_safe:"सुरक्षित जागा",emg_s:"आत्ता सुरक्षित जागा शोधा",near_s:"सर्वात जवळची सुरक्षित जागा",m_med:"मेडिकल",emg_m:"सर्वात जवळचे हॉस्पिटल / मेडिकल",near_m:"सर्वात जवळची वैद्यकीय मदत",call_p:"कॉल करा",m_toilet:"शौचालय",m_police:"पोलीस",emg_p:"सर्वात जवळचे पोलीस स्टेशन",near_p:"सर्वात जवळचे पोलीस स्टेशन",call:"स्टेशनला कॉल करा",emg:"मला आत्ता शौचालय हवे",any:"कोणीही",woman:"महिला",elder:"ज्येष्ठ",child:"मूल",f_women:"♀ महिलांसाठी",f_access:"♿ व्हीलचेअर",f_baby:"🍼 बेबी चेंजिंग",f_free:"₹0 मोफत",f_24:"🌙 24 तास",f_west:"🚽 वेस्टर्न सीट",f_backup:"⛽ पर्याय दाखवा",gps:"माझे ठिकाण",t_list:"जवळपास",t_saved:"सेव्ह ⭐",t_add:"+ जोडा",t_info:"मी",go:"चालत जाण्याचा मार्ग",near:"सर्वात जवळचे शौचालय",walk:"मिनिटे चालत",save:"सेव्ह करा",usehere:"माझे ठिकाण वापरा",name:"नाव / खूण",pinloc:"ठिकाण",
  add_tip:"यादीत नसलेले शौचालय माहीत आहे? नकाशावर टॅप करून पिन लावा, माहिती भरा आणि सेव्ह करा. हे सर्व SafeStop वापरकर्त्यांना दिसेल."}};
 let lang=store.get("lang","en");
 const t=k=>(T[lang]&&T[lang][k])||T.en[k]||k;
@@ -863,7 +889,7 @@ areaSel.innerHTML='<option value="">📌 Choose area…</option>'+AREAS.map((a,i
 
 /* ---------- state ---------- */
 const medF=new Set();
-const modeOf=p=>p.kind==="police"?"police":p.kind==="medical"?"medical":p.kind==="safe"?"safe":"toilet";
+const modeOf=p=>p.kind==="police"?"police":p.kind==="medical"?"medical":p.kind==="safe"?"safe":p.kind==="hazard"?"hazard":"toilet";
 const safeF=new Set();
 const SAFE={police:["🚓","Police",.65],hospital:["🏥","Hospital",.7],fuel:["⛽","Petrol pump",.9],pharmacy:["💊","24-hr chemist",.8],station:["🚉","Station",1.1],shop:["🏪","24-hr shop / café",.85],other:["📍","Safe place",.9]};
 const safeIcon=p=>(SAFE[p.type]||SAFE.other)[0], safeLabel=p=>(SAFE[p.type]||SAFE.other)[1];
@@ -880,6 +906,7 @@ async function api(action,data){const r=await fetch("/api/community",{method:"PO
 function sendVote(id){if(!/^[nwrc]/.test(String(id)))return;const v={...(reports[id]||{})};if(ratings[id])v.stars=ratings[id];api("vote",{id,vote:v}).then(j=>{votes[id]=j.votes;render()}).catch(()=>{})}
 async function loadCommunity(){
   if(!me)return; const m=mode, at=me;
+  if(m==="safe")loadHazards(at.lat,at.lon,2500).then(l=>{if(mode==="safe"&&me===at){hazards=l;render()}});
   try{
     const r=await fetch(`/api/community?mode=${m}&lat=${at.lat}&lon=${at.lon}&r=${m==="police"?5000:3000}`);
     if(!r.ok){commOK=false;return}
@@ -919,9 +946,9 @@ function initMap(){
   map=L.map("map",{zoomControl:true}).setView([19.0760,72.8777],12);
   const tl=L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:19,attribution:"© OpenStreetMap contributors"}).addTo(map);
   tl.on("tileload",()=>{tilesOK=true});
-  setTimeout(()=>{if(!tilesOK)banner("Preview mode: map tiles, GPS and live toilet data are blocked in this preview window. Host the app (see Help tab) to use it for real. Your saved and added toilets still work here.")},6000);
+  setTimeout(()=>{if(!tilesOK)banner("Preview mode: map tiles, GPS and live toilet data are blocked in this preview window. Host the app (see Me tab) to use it for real. Your saved and added toilets still work here.")},6000);
   layer=L.layerGroup().addTo(map);
-  map.on("click",e=>{ if(currentTab==="add"){setAddPin(e.latlng.lat,e.latlng.lng)} });
+  map.on("click",e=>{ if(pickCb){const f=pickCb;pickCb=null;f(e.latlng.lat,e.latlng.lng);return} if(currentTab==="add"){setAddPin(e.latlng.lat,e.latlng.lng)} });
 }
 function pinIcon(p){if(p.kind==="safe")return L.divIcon({className:"",html:`<div class="pin" style="background:${p.mine?"#7c3aed":staffed(p)?"#581c87":"#a855f7"}"><span>${safeIcon(p)}</span></div>`,iconSize:[30,30],iconAnchor:[15,30]});if(p.kind==="medical")return L.divIcon({className:"",html:`<div class="pin" style="background:${p.mine?"#7c3aed":p.type==="hospital"?"#b91c1c":"#15803d"}"><span>${medIcon(p)}</span></div>`,iconSize:[30,30],iconAnchor:[15,30]});if(p.kind==="police")return L.divIcon({className:"",html:`<div class="pin" style="background:${p.mine?"#7c3aed":"#1d4ed8"}"><span>🚓</span></div>`,iconSize:[30,30],iconAnchor:[15,30]});const col=p.backup?"#d97706":p.mine?"#7c3aed":(p.female==="yes"?"#db2777":"#0f766e");
   return L.divIcon({className:"",html:`<div class="pin" style="background:${col}"><span>${p.backup?(p.kind==="fuel"?"⛽":p.kind==="mall"?"🏬":"🚉"):"🚻"}</span></div>`,iconSize:[30,30],iconAnchor:[15,30]})}
@@ -1005,9 +1032,9 @@ function matches(p){
 }
 function score(p){ // lower is better: distance with bonuses for profile needs & community rating
   return ownScore(p)*commFactor(p)}
-function commFactor(p){const a=votes[p.id];if(!a)return 1;const c=a.c||{};let f=1;
+function commFactor(p){const hf=(p.kind==="safe"&&me&&pathNearHazard(me,p))?1.6:1;const a=votes[p.id];if(!a)return hf;const c=a.c||{};let f=1;
   const bad=(c.closed||0)+(c.wrong||0)+(c.unsafe||0)+(c.dark||0)+(c.dirty||0)*.5+(c.nowater||0)*.5;
-  if(bad)f*=1+Math.min(bad,6)*.35; if(c.good)f*=Math.max(.7,1-c.good*.06); if(a.sn)f*=1.15-a.stars*.06; return f}
+  if(bad)f*=1+Math.min(bad,6)*.35; if(c.good)f*=Math.max(.7,1-c.good*.06); if(a.sn)f*=1.15-a.stars*.06; return f*hf}
 function ownScore(p){
   let d=p.dist; const rep=reports[p.id]||{};
   if(p.kind==="medical"){if(rep.closed||rep.wrong)d*=3; return d}
@@ -1025,7 +1052,7 @@ function visible(){ if(!me)return Object.values(saved);
   const hidden=p=>p.community&&!p.mine&&((((votes[p.id]||{}).c||{}).wrong||0)+(((votes[p.id]||{}).c||{}).closed||0))>=3;
   return places.map(p=>({...p,dist:hav(me.lat,me.lon,p.lat,p.lon)})).filter(p=>matches(p)&&!hidden(p)).sort((a,b)=>score(a)-score(b)) }
 
-function commTags(p){const o=[];if(p.community&&!p.mine)o.push(`<span class="tag b">👥 Added by SafeStop users</span>`);
+function commTags(p){const o=[];if(p.kind==="safe"&&me&&pathNearHazard(me,p))o.push(`<span class="tag r">⚠️ Unsafe spot reported on the way</span>`);if(p.community&&!p.mine)o.push(`<span class="tag b">👥 Added by SafeStop users</span>`);
   const a=votes[p.id];if(a){if(a.sn)o.push(`<span class="tag">★ ${a.stars} (${a.sn})</span>`);
     const L={good:["👍","felt safe"],closed:["👥","said closed"],dirty:["👥","said dirty"],nowater:["👥","said no water"],unsafe:["👥","felt unsafe"],wrong:["👥","said wrong place"],dark:["👥","said dark"]};
     for(const k in (a.c||{})){const l=L[k];if(l)o.push(`<span class="tag ${k==="good"?"g":"r"}">${l[0]} ${a.c[k]} ${l[1]}</span>`)}}
@@ -1057,7 +1084,7 @@ function itemHTML(p){return `<div class="item" data-id="${p.id}">
 
 function render(){
   const v=visible(), list=$("list"), st=$("status");
-  if(layer){layer.clearLayers(); v.slice(0,120).forEach(p=>L.marker([p.lat,p.lon],{icon:pinIcon(p)}).on("click",()=>openDetail(p)).addTo(layer))}
+  if(layer){layer.clearLayers(); v.slice(0,120).forEach(p=>L.marker([p.lat,p.lon],{icon:pinIcon(p)}).on("click",()=>openDetail(p)).addTo(layer));if(mode==="safe")drawHazards()}
   if(!me){st.textContent="Choose your area or tap “My location”.";list.innerHTML="";renderSaved();return}
   st.textContent=v.length?`${v.length} ${mode==="safe"?"safe spots within 2":mode==="police"?"police stations within 5":mode==="medical"?"hospitals & medical stores within 3":"places within 2.5"} km of ${me.label||"you"} · best match first`:"";
   list.innerHTML=v.length?v.slice(0,60).map(itemHTML).join(""):mode==="safe"?`<div class="empty">No safe spots found with these filters nearby.<br><b>In danger? Call 112 now.</b><br>Try removing a filter, or add a place you know from “+ Add”.</div>`:mode==="medical"?`<div class="empty">Nothing found with these filters nearby.<br><b>Medical emergency? Call 108 for an ambulance.</b><br>Try removing a filter, or add a place you know from “+ Add”.</div>`:mode==="police"?`<div class="empty">No police station found on the map nearby.<br><b>In danger? Call 112 now.</b><br>Know one? Add it from “+ Add”.</div>`:`<div class="empty">No toilets match these filters nearby.<br>Try removing a filter or turn on “⛽ Show backups” (petrol pumps, malls, stations).</div>`;
@@ -1125,6 +1152,7 @@ function emergencySafe(){
   sheet(`<h2>🌙 ${t("near_s")}</h2>
    <div class="grid2"><a class="btn red" href="tel:112">📞 Call 112</a><a class="btn call112" href="tel:1091">📞 1091 Women</a></div>
    <a class="btn wa" href="https://wa.me/?text=${encodeURIComponent(locMsg())}" target="_blank" rel="noopener">📍 Send my location on WhatsApp</a>
+   ${contacts.length?contactsBlock(locMsg()):""}
    ${best?`<div class="big-card" style="border-color:#7e22ce"><div class="d" style="color:#7e22ce">${fmtD(best.dist)}</div><div><b>${esc(best.name)}</b> · ~${walkMin(best.dist)} ${t("walk")}</div><div class="tags">${tagsHTML(best)}</div>
      <a class="btn pri" href="${dirURL(best)}" target="_blank" rel="noopener">🚶 Walk there now</a></div>`
      :`<div class="empty">No safe spot on the map near you. Call 112 and move towards a main road with lights and people.</div>`}
@@ -1231,7 +1259,7 @@ const HELP=[["112","Emergency (Police / Fire / Ambulance)"],["1091","Women helpl
 function sos(){
   const loc=me?`https://maps.google.com/?q=${me.lat.toFixed(5)},${me.lon.toFixed(5)}`:"(location not set)";
   const msg=`I need help. My location: ${loc}`;
-  sheet(`<h2>SOS – Get help</h2><p class="meta">Tap to call. If calling doesn't open, dial the number shown.</p>
+  sheet(`<h2>SOS – Get help</h2>${contactsBlock(msg)}<div class="sec">Helplines</div><p class="meta">Tap to call. If calling doesn't open, dial the number shown.</p>
    ${HELP.map(([n,l])=>`<div class="help"><div><b>${n}</b><div class="meta">${l}</div></div><a href="tel:${n}">Call</a></div>`).join("")}
    <a class="btn wa" href="https://wa.me/?text=${encodeURIComponent(msg)}" target="_blank" rel="noopener">📍 Send my location on WhatsApp</a>
    <button class="btn out" id="sCopy">Copy my location</button>`);
@@ -1260,6 +1288,7 @@ $("addForm").onsubmit=e=>{e.preventDefault();if(!addLatLng){toast("Tap the map t
 /* ---------- help tab ---------- */
 $("p-info").innerHTML=`
  <div class="tip"><b>How it works</b><br>Toilet locations come live from OpenStreetMap, the free community map. Results are ranked by distance and by who needs it: women see women's toilets first, elderly see accessible & western-seat toilets first, children see baby-changing first. Ratings, reports and new places from everyone using SafeStop are shared, so people keep the map up to date for each other.</div>
+ <div class="tip"><b>🧭 Route, 🏠 Home & ⚠️ reports:</b> use the Route tab to check a regular walk. Tap 🏠 at the top to get home or show your address to a driver. In Safe spot mode, report dark or unsafe lanes so others are warned.</div>
  <div class="tip"><b>🌙 Safe spot:</b> late at night and feeling unsafe? Shows the nearest places that are usually open or staffed all night: police chowkis, hospitals, petrol pumps, 24-hr chemists and shops. Police and hospitals rank first. One tap to call 112 or 1091, or to send your location to family. Rate places after visiting to help yourself next time.</div>
  <div class="tip"><b>🏥 Medical mode:</b> find the nearest hospital, clinic or medical store. Filter by 24 hrs or casualty/emergency, call 108 for an ambulance, or call the place directly. Missing one? Add it from “+ Add”.</div>
  <div class="tip"><b>🚓 Police mode:</b> switch at the top to find the nearest police station or chowki, call it in one tap, or call 112. Missing one? Add it from “+ Add”.</div>
@@ -1293,6 +1322,254 @@ function setMode(m){mode=m;store.set("mode",m);document.body.classList.toggle("p
 document.querySelectorAll("#modes button").forEach(b=>b.onclick=()=>setMode(b.dataset.mode));
 document.querySelectorAll("#safeChips .chip").forEach(c=>c.onclick=()=>{const f=c.dataset.s;safeF.has(f)?safeF.delete(f):safeF.add(f);c.classList.toggle("on",safeF.has(f));render()});
 document.querySelectorAll("#medChips .chip").forEach(c=>c.onclick=()=>{const f=c.dataset.m;medF.has(f)?medF.delete(f):medF.add(f);c.classList.toggle("on",medF.has(f));render()});
+/* =====================================================================
+   v5: unsafe-spot reports · safe route · take me home · emergency contacts
+   ===================================================================== */
+let pickCb=null;
+function pickOnMap(msg,cb){pickCb=cb;$("sheet").classList.remove("show");toast(msg||"Tap the map to choose a spot");try{$("map").scrollIntoView({behavior:"smooth"})}catch(e){}}
+
+/* ---------- geometry helpers ---------- */
+function toXY(lat,lon,lat0,lon0){return [(lon-lon0)*Math.cos(lat0*Math.PI/180)*111320,(lat-lat0)*110540]}
+function distToSeg(p,a,b){ // metres from point p to segment a-b (all {lat,lon})
+  const [px,py]=toXY(p.lat,p.lon,a.lat,a.lon),[bx,by]=toXY(b.lat,b.lon,a.lat,a.lon);
+  const L=bx*bx+by*by; let t=L?((px*bx+py*by)/L):0; t=Math.max(0,Math.min(1,t));
+  return Math.hypot(px-t*bx,py-t*by)}
+
+/* ---------- unsafe-spot reports (shared) ---------- */
+const HZ={dark:["🌑","Dark lane / no lights"],streetlight:["💡","Broken streetlight"],harassment:["⚠️","Harassment reported"],deserted:["🚷","Deserted at night"],other:["❗","Feels unsafe"]};
+let hazards=[]; const hzCache={};
+const hzHidden=h=>{const c=(votes[h.id]||{}).c||{};return (c.fixed||0)>=2&&(c.fixed||0)>(c.confirm||0)};
+async function loadHazards(lat,lon,r){
+  const key=[lat.toFixed(3),lon.toFixed(3),r].join(",");
+  if(hzCache[key]&&Date.now()-hzCache[key].at<120000)return hzCache[key].list;
+  try{const res=await fetch(`/api/community?mode=hazard&lat=${lat}&lon=${lon}&r=${r}`);if(!res.ok)return [];
+    const list=((await res.json()).places||[]).map(h=>({...h,kind:"hazard",community:true,mine:mine.some(x=>x.id===h.id)}));
+    if(list.length){try{const v=await api("votes",{ids:list.map(h=>h.id)});Object.assign(votes,v.votes||{})}catch(e){}}
+    hzCache[key]={at:Date.now(),list};return list}catch(e){return []}}
+function hzIcon(h){return L.divIcon({className:"",html:`<div class="hz">${(HZ[h.type]||HZ.other)[0]}</div>`,iconSize:[28,28],iconAnchor:[14,14]})}
+function ago(t){if(!t)return"";const d=(Date.now()-t)/86400000;return d<1?"today":d<2?"yesterday":d<30?Math.round(d)+" days ago":Math.round(d/30)+" months ago"}
+function drawHazards(target){(hazards||[]).filter(h=>!hzHidden(h)).forEach(h=>L.marker([h.lat,h.lon],{icon:hzIcon(h),zIndexOffset:-100}).on("click",()=>openHazard(h)).addTo(target||layer))}
+function pathNearHazard(a,b){return (hazards||[]).find(h=>!hzHidden(h)&&distToSeg(h,a,b)<80&&hav(h.lat,h.lon,b.lat,b.lon)>25)}
+function openHazard(h){
+  const [ic,label]=HZ[h.type]||HZ.other, c=(votes[h.id]||{}).c||{}, r=reports[h.id]||{};
+  sheet(`<h2>${ic} ${esc(label)}</h2>
+   <div class="meta">Reported ${ago(h.at)} · ${h.when==="always"?"day and night":"at night"}${me?` · ${fmtD(hav(me.lat,me.lon,h.lat,h.lon))} from you`:""}</div>
+   <div class="tags">${c.confirm?`<span class="tag r">👥 ${c.confirm} said still there</span>`:""}${c.fixed?`<span class="tag g">👥 ${c.fixed} said fixed</span>`:""}${h.mine?`<span class="tag b">Reported by you</span>`:""}</div>
+   <div class="sec">Is it still like this?</div>
+   <div class="rep"><button class="chip ${r.confirm?"on":""}" data-h="confirm">⚠️ Still there</button><button class="chip ${r.fixed?"on":""}" data-h="fixed">✅ Fixed / safe now</button></div>
+   <div class="safe-note">Reports come from other SafeStop users and can't be checked. Use them as a warning and stay alert. To report a crime, call 112.</div>
+   ${h.mine?`<button class="btn out" id="hDel" style="color:var(--red)">Delete my report</button>`:""}`);
+  $("sheetBox").querySelectorAll("[data-h]").forEach(b=>b.onclick=()=>{const k=b.dataset.h,o=k==="confirm"?"fixed":"confirm";reports[h.id]=reports[h.id]||{};reports[h.id][k]=!reports[h.id][k];if(reports[h.id][k])reports[h.id][o]=false;store.set("reports",reports);openHazard(h);const v={...reports[h.id]};api("vote",{id:h.id,vote:v}).then(j=>{votes[h.id]=j.votes;if($("sheet").classList.contains("show")&&$("sheetBox").querySelector("[data-h]"))openHazard(h);render()}).catch(()=>{})});
+  if(h.mine)$("hDel").onclick=()=>{api("delete",{id:h.id}).catch(()=>{});const i=mine.findIndex(m=>m.id===h.id);if(i>-1)mine.splice(i,1);store.set("mine",mine);hazards=hazards.filter(x=>x.id!==h.id);Object.keys(hzCache).forEach(k=>delete hzCache[k]);$("sheet").classList.remove("show");render();toast("Report deleted")};
+}
+function reportHazard(){
+  let spot=null, type="dark", when="night";
+  const draw=()=>{sheet(`<h2>⚠️ Report an unsafe spot</h2>
+   <p class="meta">Warn other women, parents and elders about a place to avoid. Your report is anonymous and shared with everyone on SafeStop.</p>
+   <div class="sec">What's the problem?</div>
+   <div class="rep" id="hzT">${Object.entries(HZ).map(([k,[i,l]])=>`<button class="chip ${type===k?"on":""}" data-t2="${k}">${i} ${l}</button>`).join("")}</div>
+   <div class="sec">When?</div>
+   <div class="rep"><button class="chip ${when==="night"?"on":""}" data-w="night">🌙 At night</button><button class="chip ${when==="always"?"on":""}" data-w="always">☀️🌙 Day and night</button></div>
+   <div class="sec">Where?</div>
+   <div class="rrow">${spot?`📍 ${spot.lat.toFixed(5)}, ${spot.lon.toFixed(5)}`:"Not chosen yet"}</div>
+   <div class="grid2"><button class="btn out sm" id="hzHere">📍 Where I am</button><button class="btn out sm" id="hzPick">🗺 Pick on map</button></div>
+   <button class="btn red" id="hzSend" ${spot?"":"disabled style=opacity:.5"}>Report unsafe spot</button>
+   <div class="safe-note">Please report places, not people. Don't add names or personal details. If you're in danger right now, call 112.</div>`);
+   $("sheetBox").querySelectorAll("[data-t2]").forEach(b=>b.onclick=()=>{type=b.dataset.t2;draw()});
+   $("sheetBox").querySelectorAll("[data-w]").forEach(b=>b.onclick=()=>{when=b.dataset.w;draw()});
+   $("hzHere").onclick=()=>{if(me){spot={lat:me.lat,lon:me.lon};draw()}else toast("Set your location first (📍 My location)")};
+   $("hzPick").onclick=()=>pickOnMap("Tap the map where the unsafe spot is",(lat,lon)=>{spot={lat,lon};draw()});
+   $("hzSend").onclick=async()=>{if(!spot)return;$("hzSend").disabled=true;
+     try{const j=await api("add",{mode:"hazard",place:{lat:spot.lat,lon:spot.lon,type,when}});
+       const h={id:j.id,kind:"hazard",type,when,lat:spot.lat,lon:spot.lon,at:Date.now(),community:true,mine:true};
+       mine.push(h);store.set("mine",mine);hazards.push(h);Object.keys(hzCache).forEach(k=>delete hzCache[k]);
+       $("sheet").classList.remove("show");render();toast("Thank you – others will now see this warning")}
+     catch(e){$("hzSend").disabled=false;toast(commOK===false?"Reporting needs the shared database – not available here":"Couldn't send: "+e.message)}};
+  };
+  draw();
+}
+
+/* ---------- emergency contacts ---------- */
+let contacts=store.get("contacts",[]);
+const isIOS=/iPad|iPhone|iPod/.test(navigator.userAgent);
+const digits=n=>String(n||"").replace(/[^0-9+]/g,"");
+const waNum=n=>{let d=digits(n).replace(/^\+/,"");if(d.length===10)d="91"+d;if(d.length===11&&d[0]==="0")d="91"+d.slice(1);return d};
+function smsAll(msg){const nums=contacts.map(c=>digits(c.phone)).join(",");return isIOS?`sms:/open?addresses=${nums}&body=${encodeURIComponent(msg)}`:`sms:${nums}?body=${encodeURIComponent(msg)}`}
+function contactsBlock(msg){
+  if(!contacts.length)return `<button class="btn out" onclick="document.querySelector('.tabs [data-tab=info]').click();document.getElementById('sheet').classList.remove('show')">➕ Add emergency contacts (family / friends)</button>`;
+  return `<a class="btn red" href="${smsAll(msg)}">📩 SMS all my contacts (${contacts.length})</a>
+   <div class="clist">${contacts.map(c=>`<div class="help"><div><b style="color:var(--ink);font-size:1em">${esc(c.name)}</b><div class="meta">${esc(c.phone)}${c.rel?" · "+esc(c.rel):""}</div></div><div style="display:flex;gap:6px"><a href="tel:${digits(c.phone)}">Call</a><a href="https://wa.me/${waNum(c.phone)}?text=${encodeURIComponent(msg)}" target="_blank" rel="noopener" style="border-color:#16a34a;color:#16a34a">WhatsApp</a></div></div>`).join("")}</div>`}
+function renderContacts(){
+  const el=$("meContacts");if(!el)return;
+  el.innerHTML=(contacts.length?contacts.map((c,i)=>`<div class="help"><div><b style="color:var(--ink);font-size:1em">${esc(c.name)}</b><div class="meta">${esc(c.phone)}${c.rel?" · "+esc(c.rel):""}</div></div><div style="display:flex;gap:6px"><a href="tel:${digits(c.phone)}">Call</a><button class="chip" data-cdel="${i}">✕</button></div></div>`).join(""):`<div class="meta">No contacts yet. Add up to 5 people to alert in an emergency.</div>`)
+   +(contacts.length<5?`<form id="cForm" class="cform"><input id="cName" placeholder="Name" required maxlength="40"><input id="cPhone" placeholder="Phone e.g. 98xxxxxxxx" inputmode="tel" required maxlength="20"><input id="cRel" placeholder="Relation (optional)" maxlength="20"><button class="btn pri sm" type="submit">Add contact</button></form>`:"");
+  el.querySelectorAll("[data-cdel]").forEach(b=>b.onclick=()=>{contacts.splice(+b.dataset.cdel,1);store.set("contacts",contacts);renderContacts()});
+  const f=$("cForm");if(f)f.onsubmit=e=>{e.preventDefault();const ph=digits($("cPhone").value);if(ph.replace("+","").length<8){toast("Please enter a valid phone number");return}
+    contacts.push({name:$("cName").value.trim(),phone:$("cPhone").value.trim(),rel:$("cRel").value.trim()});store.set("contacts",contacts);renderContacts();toast("Contact saved on this phone ✓")};
+}
+
+/* ---------- take me home ---------- */
+let home=store.get("home",null);
+function homeSetup(){
+  let spot=home?{lat:home.lat,lon:home.lon}:null;
+  const draw=()=>{sheet(`<h2>🏠 Set your home</h2>
+   <p class="meta">Saved only on this phone. Used for one-tap directions home and a big address card to show an auto or cab driver.</p>
+   <label class="f">Home address (as you'd tell a driver)<textarea id="hAddr" rows="3" maxlength="200" placeholder="e.g. Flat 12, Sai Krupa Bldg, Ranade Road, Dadar West">${esc(home?.addr||"")}</textarea></label>
+   <label class="f">Nearby landmark<input id="hLm" maxlength="80" placeholder="e.g. Near Shivaji Park gate 5" value="${esc(home?.lm||"")}"></label>
+   <div class="sec">Home location on map</div>
+   <div class="rrow">${spot?`📍 ${spot.lat.toFixed(5)}, ${spot.lon.toFixed(5)}`:"Not chosen yet"}</div>
+   <div class="grid2"><button class="btn out sm" id="hHere">📍 I'm at home now</button><button class="btn out sm" id="hPick">🗺 Pick on map</button></div>
+   <button class="btn pri" id="hSave">Save home</button>
+   ${home?`<button class="btn out" id="hClear" style="color:var(--red)">Remove home</button>`:""}`);
+   const keep=()=>({addr:$("hAddr").value,lm:$("hLm").value});
+   $("hHere").onclick=()=>{const k=keep();const done=()=>{home={...(home||{}),...k};draw()};if(navigator.geolocation){navigator.geolocation.getCurrentPosition(p=>{spot={lat:p.coords.latitude,lon:p.coords.longitude};done()},()=>{if(me){spot={lat:me.lat,lon:me.lon};done()}else toast("Location blocked – pick on map instead")},{enableHighAccuracy:true,timeout:10000})}else if(me){spot={lat:me.lat,lon:me.lon};done()}};
+   $("hPick").onclick=()=>{const k=keep();pickOnMap("Tap your home on the map",(lat,lon)=>{spot={lat,lon};home={...(home||{}),...k};draw()})};
+   $("hSave").onclick=()=>{const k=keep();if(!spot){toast("Choose your home on the map first");return}if(!k.addr.trim()){toast("Please type your address");return}
+     home={lat:spot.lat,lon:spot.lon,addr:k.addr.trim(),lm:k.lm.trim()};store.set("home",home);renderHomeBox();toast("Home saved ✓");openHome()};
+   if(home)$("hClear").onclick=()=>{home=null;store.set("home",null);renderHomeBox();$("sheet").classList.remove("show")};
+  };
+  draw();
+}
+function openHome(){
+  if(!home||home.lat==null)return homeSetup();
+  const d=me?hav(me.lat,me.lon,home.lat,home.lon):null;
+  const g=m=>`https://www.google.com/maps/dir/?api=1&destination=${home.lat},${home.lon}&travelmode=${m}`;
+  sheet(`<h2>🏠 Take me home</h2>
+   ${d!=null?`<div class="meta">${fmtD(d)} from ${esc(me.label||"you")}</div>`:""}
+   <div class="rrow" style="font-size:1.05em">${esc(home.addr)}${home.lm?`<br><span class="meta">${esc(home.lm)}</span>`:""}</div>
+   <button class="btn pri" id="drvBtn">🛺 Show address to driver</button>
+   <div class="grid2"><a class="btn out" href="${g("walking")}" target="_blank" rel="noopener">🚶 Walk</a><a class="btn out" href="${g("driving")}" target="_blank" rel="noopener">🛺 Auto / cab</a></div>
+   <a class="btn out" href="${g("transit")}" target="_blank" rel="noopener">🚆 Train / bus</a>
+   <button class="btn out" id="hRoute">🧭 Check safe route home</button>
+   <div class="sec">Tell family I'm heading home</div>
+   ${contactsBlock(`I'm heading home now.${me?` I'm near: https://maps.google.com/?q=${me.lat.toFixed(5)},${me.lon.toFixed(5)}`:""}`)}
+   <button class="btn out" id="hEdit">✏️ Edit home</button>`);
+  $("drvBtn").onclick=driverCard; $("hEdit").onclick=homeSetup;
+  $("hRoute").onclick=()=>{$("sheet").classList.remove("show");routeFrom=me?{lat:me.lat,lon:me.lon,label:me.label||"My location"}:null;routeTo={lat:home.lat,lon:home.lon,label:"🏠 Home"};document.querySelector('.tabs [data-tab=route]').click();renderRoutePane();if(routeFrom)showRoute();else toast("Set where you are first (From)")};
+}
+function driverCard(){
+  const o=document.createElement("div");o.className="drv";
+  o.innerHTML=`<div class="drv-in"><div class="drv-h">कृपया मुझे यहाँ ले चलिए<br><small>Please take me here</small></div>
+   <div class="drv-a">${esc(home.addr)}</div>${home.lm?`<div class="drv-l">📍 ${esc(home.lm)}</div>`:""}
+   <a class="btn pri" href="https://www.google.com/maps/dir/?api=1&destination=${home.lat},${home.lon}&travelmode=driving" target="_blank" rel="noopener" style="font-size:.9em">🧭 Open map for driver</a>
+   <button class="btn out" id="drvX" style="background:#fff">Close</button></div>`;
+  document.body.appendChild(o);o.querySelector("#drvX").onclick=()=>o.remove();
+}
+function renderHomeBox(){const el=$("meHome");if(!el)return;
+  el.innerHTML=home?`<div class="rrow">${esc(home.addr)}${home.lm?`<br><span class="meta">${esc(home.lm)}</span>`:""}</div><div class="grid2"><button class="btn pri sm" onclick="document.getElementById('homeBtn').click()">🏠 Take me home</button><button class="btn out sm" id="meHomeEdit">✏️ Edit</button></div>`
+   :`<button class="btn pri" id="meHomeEdit">🏠 Set my home address</button>`;
+  $("meHomeEdit").onclick=homeSetup}
+
+/* ---------- safe route ---------- */
+let routeFrom=null, routeTo=null, routeLayer=null, routeData=null;
+const RT={police:["🚓","Police"],hospital:["🏥","Hospital"],clinic:["🩺","Clinic"],pharmacy:["💊","Chemist"],fuel:["⛽","Petrol pump"],shop:["🏪","24-hr shop"],toilets:["🚻","Toilet"]};
+function renderRoutePane(){
+  const lab=p=>p?esc(p.label||`${p.lat.toFixed(4)}, ${p.lon.toFixed(4)}`):"<span class='meta'>Not set</span>";
+  $("rFrom").innerHTML=lab(routeFrom); $("rTo").innerHTML=lab(routeTo);
+  const sr=store.get("routes",[]);
+  $("rSaved").innerHTML=sr.length?sr.map((r,i)=>`<div class="help"><div><b style="color:var(--ink);font-size:1em">${esc(r.name)}</b><div class="meta">${esc(r.from.label||"")} → ${esc(r.to.label||"")}</div></div><div style="display:flex;gap:6px"><a href="#" data-rload="${i}">Open</a><button class="chip" data-rdel="${i}">✕</button></div></div>`).join(""):`<div class="meta">Save routes you use often, like a child's walk to school or your way home from the station.</div>`;
+  $("rSaved").querySelectorAll("[data-rload]").forEach(a=>a.onclick=e=>{e.preventDefault();const r=sr[+a.dataset.rload];routeFrom=r.from;routeTo=r.to;renderRoutePane();showRoute()});
+  $("rSaved").querySelectorAll("[data-rdel]").forEach(b=>b.onclick=()=>{sr.splice(+b.dataset.rdel,1);store.set("routes",sr);renderRoutePane()});
+}
+function setEnd(which,val){if(which==="from")routeFrom=val;else routeTo=val;renderRoutePane()}
+function chooseEnd(which,how){
+  if(how==="me"){if(me){setEnd(which,{lat:me.lat,lon:me.lon,label:me.label&&me.label!=="you"?me.label:"📍 My location"})}else if(navigator.geolocation){navigator.geolocation.getCurrentPosition(p=>setEnd(which,{lat:p.coords.latitude,lon:p.coords.longitude,label:"📍 My location"}),()=>toast("Location blocked – choose an area or pick on map"),{enableHighAccuracy:true,timeout:10000})}return}
+  if(how==="home"){if(home&&home.lat!=null)setEnd(which,{lat:home.lat,lon:home.lon,label:"🏠 Home"});else{toast("Set your home first");homeSetup()}return}
+  if(how==="pick")pickOnMap(which==="from"?"Tap the map where the walk starts":"Tap the map where the walk ends",(lat,lon)=>setEnd(which,{lat,lon,label:`📌 Picked on map`}));
+}
+async function searchPlace(q){
+  const out=$("rResults");out.innerHTML=`<div class="meta">Searching…</div>`;
+  try{const r=await fetch(`https://nominatim.openstreetmap.org/search?format=json&limit=6&countrycodes=in&bounded=1&viewbox=72.75,19.35,73.12,18.88&q=${encodeURIComponent(q)}`);
+    const j=await r.json();
+    if(!j.length){out.innerHTML=`<div class="meta">Nothing found. Try a simpler name, or pick on map.</div>`;return}
+    out.innerHTML=j.map((x,i)=>`<div class="item" data-i="${i}" style="padding:8px"><div style="flex:1;min-width:0"><h3 style="font-size:.9em">${esc(x.display_name.split(",").slice(0,2).join(","))}</h3><div class="meta">${esc(x.display_name.split(",").slice(2,4).join(","))}</div></div></div>`).join("");
+    out.querySelectorAll(".item").forEach(el=>el.onclick=()=>{const x=j[+el.dataset.i];setEnd("to",{lat:+x.lat,lon:+x.lon,label:x.display_name.split(",").slice(0,2).join(",")});out.innerHTML=""});
+  }catch(e){out.innerHTML=`<div class="meta">Search isn't available here. Pick the place on the map instead.</div>`}
+}
+async function getWalkRoute(a,b){
+  try{const ctl=new AbortController();const to=setTimeout(()=>ctl.abort(),12000);
+    const r=await fetch(`https://routing.openstreetmap.de/routed-foot/route/v1/foot/${a.lon},${a.lat};${b.lon},${b.lat}?overview=full&geometries=geojson`,{signal:ctl.signal});clearTimeout(to);
+    const j=await r.json();const rt=j.routes&&j.routes[0];if(!rt)throw 0;
+    return {pts:rt.geometry.coordinates.map(([lon,lat])=>({lat,lon})),dist:rt.distance,dur:rt.duration,real:true}}
+  catch(e){const d=hav(a.lat,a.lon,b.lat,b.lon);return {pts:[a,b],dist:d*1.3,dur:d*1.3/1.25,real:false}}
+}
+function along(pts){const cum=[0];for(let i=1;i<pts.length;i++)cum[i]=cum[i-1]+hav(pts[i-1].lat,pts[i-1].lon,pts[i].lat,pts[i].lon);return cum}
+function nearestOnRoute(p,pts,cum){let best=1e9,at=0;for(let i=0;i<pts.length-1;i++){const a=pts[i],b=pts[i+1];const [px,py]=toXY(p.lat,p.lon,a.lat,a.lon),[bx,by]=toXY(b.lat,b.lon,a.lat,a.lon);const L2=bx*bx+by*by;let t=L2?(px*bx+py*by)/L2:0;t=Math.max(0,Math.min(1,t));const d=Math.hypot(px-t*bx,py-t*by);if(d<best){best=d;at=cum[i]+t*(cum[i+1]-cum[i])}}return {off:best,at}}
+async function showRoute(){
+  if(!routeFrom||!routeTo){toast("Choose both From and To");return}
+  const out=$("rOut");out.innerHTML=`<div class="status">Finding the walking route and safe places along it…</div>`;
+  const R=await getWalkRoute(routeFrom,routeTo);
+  if(R.dist>15000){out.innerHTML=`<div class="empty">That's over 15 km – too long to check as a walk. Try a shorter route.</div>`;return}
+  // simplify polyline for the map-data query
+  const step=Math.max(1,Math.ceil(R.pts.length/60)); let sp=R.pts.filter((_,i)=>i%step===0); if(sp[sp.length-1]!==R.pts[R.pts.length-1])sp.push(R.pts[R.pts.length-1]);
+  if(sp.length===2){const a=sp[0],b=sp[1],n=Math.min(30,Math.ceil(R.dist/150));sp=Array.from({length:n+1},(_,i)=>({lat:a.lat+(b.lat-a.lat)*i/n,lon:a.lon+(b.lon-a.lon)*i/n}))}
+  const line=sp.map(p=>`${p.lat.toFixed(5)},${p.lon.toFixed(5)}`).join(",");
+  let found=[];
+  try{const j=await overpass(`[out:json][timeout:25];(nwr["amenity"~"^(police|hospital|clinic|doctors|pharmacy|fuel|toilets)$"](around:150,${line});nwr["shop"]["opening_hours"="24/7"](around:150,${line}););out center tags 300;`);
+    found=j.elements.map(el=>{const tg=el.tags||{};const a=tg.amenity;const k=a==="doctors"?"clinic":a&&RT[a]?a:"shop";return {id:el.type[0]+el.id,lat:el.lat??el.center?.lat,lon:el.lon??el.center?.lon,k,name:tg.name||RT[k][1],phone:tg.phone||tg["contact:phone"]||"",hours:tg.opening_hours||""}}).filter(p=>p.lat)}
+  catch(e){toast("Couldn't load map data for the route")}
+  const cum=along(R.pts), total=cum[cum.length-1]||R.dist;
+  found.forEach(p=>{const n=nearestOnRoute(p,R.pts,cum);p.off=n.off;p.pos=n.at});
+  found=found.filter(p=>p.off<=170).sort((a,b)=>a.pos-b.pos);
+  const mid=R.pts[Math.floor(R.pts.length/2)];
+  const hz=(await loadHazards(mid.lat,mid.lon,Math.min(6000,Math.round(total/2+600)))).filter(h=>!hzHidden(h));
+  const hzOn=hz.map(h=>{const n=nearestOnRoute(h,R.pts,cum);return {...h,off:n.off,pos:n.at}}).filter(h=>h.off<=120).sort((a,b)=>a.pos-b.pos);
+  hzOn.forEach(h=>{if(!hazards.find(x=>x.id===h.id))hazards.push(h)});
+  // longest stretch without a safe place (toilets don't count)
+  const marks=[0,...found.filter(p=>p.k!=="toilets").map(p=>p.pos),total].sort((a,b)=>a-b);
+  let gap=0,gs=0;for(let i=1;i<marks.length;i++)if(marks[i]-marks[i-1]>gap){gap=marks[i]-marks[i-1];gs=marks[i-1]}
+  routeData={R,found,hzOn,total,gap,gs};
+  // draw
+  if(routeLayer)routeLayer.remove(); routeLayer=L.layerGroup().addTo(map);
+  const poly=L.polyline(R.pts.map(p=>[p.lat,p.lon]),{color:"#7e22ce",weight:5,opacity:.85,dashArray:R.real?null:"8 8"}).addTo(routeLayer);
+  L.marker([routeFrom.lat,routeFrom.lon],{icon:L.divIcon({className:"",html:'<div class="pin" style="background:#0f766e"><span>A</span></div>',iconSize:[30,30],iconAnchor:[15,30]})}).addTo(routeLayer);
+  L.marker([routeTo.lat,routeTo.lon],{icon:L.divIcon({className:"",html:'<div class="pin" style="background:#7e22ce"><span>B</span></div>',iconSize:[30,30],iconAnchor:[15,30]})}).addTo(routeLayer);
+  found.forEach(p=>L.marker([p.lat,p.lon],{icon:L.divIcon({className:"",html:`<div class="pin" style="background:${p.k==="police"?"#1d4ed8":p.k==="hospital"?"#b91c1c":"#15803d"}"><span>${RT[p.k][0]}</span></div>`,iconSize:[26,26],iconAnchor:[13,26]})}).on("click",()=>routePlace(p)).addTo(routeLayer));
+  hzOn.forEach(h=>L.marker([h.lat,h.lon],{icon:hzIcon(h)}).on("click",()=>openHazard(h)).addTo(routeLayer));
+  try{map.fitBounds(poly.getBounds(),{padding:[30,30]})}catch(e){}
+  // summary
+  const cnt=k=>found.filter(p=>p.k===k).length;
+  const sum=Object.keys(RT).filter(k=>cnt(k)).map(k=>`${RT[k][0]} ${cnt(k)} ${RT[k][1].toLowerCase()}${cnt(k)>1&&!/s$/.test(RT[k][1])?"s":""}`).join(" · ");
+  const gmaps=`https://www.google.com/maps/dir/?api=1&origin=${routeFrom.lat},${routeFrom.lon}&destination=${routeTo.lat},${routeTo.lon}&travelmode=walking`;
+  out.innerHTML=`<div class="big-card" style="border-color:#7e22ce;margin-top:12px">
+    <div><b>${fmtD(total)}</b> · about ${Math.max(1,Math.round(total*1.0/70))} min walk${R.real?"":" <span class='meta'>(approximate – straight line)</span>"}</div>
+    <div class="meta" style="margin-top:4px">${sum||"No safe places found within 150 m of this route."}</div>
+    ${hzOn.length?`<div class="tag r" style="display:inline-block;margin-top:8px">⚠️ ${hzOn.length} unsafe spot${hzOn.length>1?"s":""} reported on this route</div>`:`<div class="tag g" style="display:inline-block;margin-top:8px">✅ No unsafe spots reported on this route</div>`}
+    ${gap>600?`<div class="safe-note">Longest stretch with no safe place: <b>${fmtD(gap)}</b> (from ${fmtD(gs)} to ${fmtD(gs+gap)}). Take extra care there, especially after dark.</div>`:""}
+    <a class="btn pri" href="${gmaps}" target="_blank" rel="noopener">🧭 Open walking directions</a>
+    <div class="grid2"><button class="btn out sm" id="rSave">⭐ Save route</button><button class="btn out sm" id="rShare">📤 Share route</button></div>
+    <button class="btn out sm" id="rClear">✕ Clear route from map</button>
+    <div class="meta" style="margin-top:6px">Google Maps may suggest a slightly different path. If it does, check it against the warnings here.</div></div>
+   ${hzOn.length||found.length?`<div class="sec">Along the way</div>`:""}
+   ${[...found.map(p=>({...p,t:"p"})),...hzOn.map(h=>({...h,t:"h"}))].sort((a,b)=>a.pos-b.pos).map((p,i)=>p.t==="h"
+     ?`<div class="item hzitem" data-hz="${p.id}"><div class="ic" style="background:#fef2f2">${(HZ[p.type]||HZ.other)[0]}</div><div style="flex:1"><h3>${esc((HZ[p.type]||HZ.other)[1])}</h3><div class="meta">Reported ${ago(p.at)}</div></div><div class="dist" style="color:var(--red)">at ${fmtD(p.pos)}</div></div>`
+     :`<div class="item" data-rp="${p.id}"><div class="ic">${RT[p.k][0]}</div><div style="flex:1;min-width:0"><h3>${esc(p.name)}</h3><div class="meta">${RT[p.k][1]}${p.hours==="24/7"?" · 24 hrs":""}${p.phone?" · 📞":""}</div></div><div class="dist">at ${fmtD(p.pos)}</div></div>`).join("")}`;
+  out.querySelectorAll("[data-rp]").forEach(el=>el.onclick=()=>routePlace(found.find(p=>p.id===el.dataset.rp)));
+  out.querySelectorAll("[data-hz]").forEach(el=>el.onclick=()=>openHazard(hzOn.find(h=>h.id===el.dataset.hz)));
+  $("rClear").onclick=()=>{if(routeLayer){routeLayer.remove();routeLayer=null}out.innerHTML="";routeData=null};
+  $("rShare").onclick=()=>copy(`Walking route ${routeFrom.label||""} → ${routeTo.label||""}: ${gmaps}`);
+  $("rSave").onclick=()=>{sheet(`<h2>⭐ Save this route</h2><label class="f">Name<input id="rName" maxlength="40" placeholder="e.g. Riya's walk to school"></label><button class="btn pri" id="rNameOk">Save</button>`);
+    $("rNameOk").onclick=()=>{const n=$("rName").value.trim()||"My route";const sr=store.get("routes",[]);sr.unshift({name:n,from:routeFrom,to:routeTo});store.set("routes",sr.slice(0,10));$("sheet").classList.remove("show");renderRoutePane();toast("Route saved ✓")}};
+}
+function routePlace(p){if(!p)return;sheet(`<h2>${RT[p.k][0]} ${esc(p.name)}</h2><div class="meta">${RT[p.k][1]} · at ${fmtD(p.pos)} along the route${p.hours?` · ⏰ ${esc(p.hours)}`:""}</div>
+  ${p.phone?`<a class="btn pri" href="${telLink(p.phone)}">📞 Call ${esc(p.phone)}</a>`:""}<a class="btn out" href="${dirURL(p)}" target="_blank" rel="noopener">🚶 Directions</a>`)}
+
+/* ---------- wire up ---------- */
+(function(){
+  // Me tab: home + contacts above the help tips
+  $("p-info").insertAdjacentHTML("afterbegin",`<div class="sec" style="margin-top:4px">🏠 Home</div><div id="meHome"></div>
+   <div class="sec">📞 Emergency contacts</div><div class="meta">Shown on every SOS screen so you can alert them in one tap. Saved only on this phone.</div><div id="meContacts"></div>
+   <div class="sec">ℹ️ Help</div>`);
+  renderHomeBox(); renderContacts();
+  $("homeBtn").onclick=openHome;
+  $("hzBtn").onclick=reportHazard;
+  document.querySelectorAll("[data-from]").forEach(b=>b.onclick=()=>chooseEnd("from",b.dataset.from));
+  document.querySelectorAll("[data-to]").forEach(b=>b.onclick=()=>chooseEnd("to",b.dataset.to));
+  $("rSearch").onsubmit=e=>{e.preventDefault();const q=$("rQ").value.trim();if(q.length>2)searchPlace(q)};
+  $("rGo").onclick=showRoute;
+  renderRoutePane();
+})();
+
 /* ---------- start ---------- */
 initMap(); setMode(mode);
 const w=store.get("who","any"); const wb=document.querySelector(`#who [data-who="${w}"]`); if(wb)wb.click();
