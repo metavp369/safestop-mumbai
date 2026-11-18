@@ -1,10 +1,11 @@
-# SafeStop Mumbai – find a public toilet fast
+# SafeStop Mumbai – find a public toilet or police station fast
 
 **Live:** https://safestop-mumbai.vercel.app (Vercel project feroz-shaikhs-projects/safestop-mumbai, deployed from C:\safestop with `npx vercel --prod`)
 
 A free mobile web app (installable to the home screen) for finding the nearest public toilet in Mumbai. It is built with women, elderly people and children in mind.
 
 ## Features
+- **🚓 Police mode** – switch at the top to find the nearest police station or chowki. One-tap call to the station (if its number is on the map) or 112, walk or auto/car directions, report closed or wrong location, and add a missing station with its phone number
 - **"I need a toilet NOW"** – one tap finds the nearest usable toilet and opens walking directions
 - **Who needs it?** – Woman / Elderly / Child / Anyone changes the ranking (women's, accessible + western seat, baby-changing first)
 - **Filters** – Women's, Wheelchair accessible, Baby change, Free, 24 hrs, Western seat

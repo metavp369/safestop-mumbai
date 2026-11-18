@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5">
 <meta name="theme-color" content="#0f766e">
-<title>SafeStop Mumbai – Find a Toilet Fast</title>
+<title>SafeStop Mumbai – Toilets & Police Fast</title>
 <link rel="manifest" href="manifest.json">
 <style>/* required styles */
 
@@ -678,6 +678,7 @@ button{font:inherit;cursor:pointer;border:0;background:none;color:inherit}
 header{background:var(--teal);color:#fff;padding:10px 14px;display:flex;align-items:center;gap:10px}
 header h1{font-size:1.1em;flex:1;display:flex;align-items:center;gap:8px}
 header .hb{background:rgba(255,255,255,.16);border-radius:8px;padding:6px 10px;font-size:.85em}
+.modes{display:flex;background:#0b5e58;padding:4px;gap:4px}.modes button{flex:1;color:#ccfbf1;padding:8px;border-radius:10px;font-weight:600;font-size:.95em}.modes button.on{background:#fff;color:var(--teal)}body.police .modes button.on{color:#1d4ed8}body.police header{background:#1e3a8a}body.police .modes{background:#172f6e}.police-only{display:none}body.police .police-only{display:block}body.police .cbx.police-only{display:flex}body.police .toilet-only{display:none!important}.call112{background:#1d4ed8;color:#fff}
 .banner{background:#fef3c7;color:#78350f;font-size:.85em;padding:8px 14px;display:none}
 .banner.show{display:block}
 .top{padding:10px 12px;background:#fff;border-bottom:1px solid var(--line)}
@@ -751,20 +752,21 @@ label.f input,label.f select{display:block;width:100%;font:inherit;padding:10px;
   <button class="hb" id="langBtn">EN / हि / म</button>
   <button class="hb" id="bigBtn" title="Large text">A+</button>
 </header>
+<div class="modes" id="modes"><button data-mode="toilet" class="on">🚻 <span data-t="m_toilet">Toilets</span></button><button data-mode="police">🚓 <span data-t="m_police">Police</span></button></div>
 <div class="banner" id="banner"></div>
 
 <div class="top">
   <div class="sos-row">
-    <button class="emg" id="emgBtn">⚡ <span data-t="emg">I need a toilet NOW</span></button>
+    <button class="emg" id="emgBtn">⚡ <span id="emgTxt">I need a toilet NOW</span></button>
     <button class="sos" id="sosBtn">SOS</button>
   </div>
-  <div class="who" id="who">
+  <div class="who toilet-only" id="who">
     <button data-who="any" class="on"><span>🧑</span><b data-t="any">Anyone</b></button>
     <button data-who="woman"><span>👩</span><b data-t="woman">Woman</b></button>
     <button data-who="elder"><span>🧓</span><b data-t="elder">Elderly</b></button>
     <button data-who="child"><span>👶</span><b data-t="child">Child</b></button>
   </div>
-  <div class="chips" id="chips">
+  <div class="chips toilet-only" id="chips">
     <button class="chip" data-f="women" data-t="f_women">♀ Women's</button>
     <button class="chip" data-f="access" data-t="f_access">♿ Accessible</button>
     <button class="chip" data-f="baby" data-t="f_baby">🍼 Baby change</button>
@@ -784,17 +786,19 @@ label.f input,label.f select{display:block;width:100%;font:inherit;padding:10px;
   <div class="tabs">
     <button class="on" data-tab="list" data-t="t_list">Nearby</button>
     <button data-tab="saved" data-t="t_saved">Saved ⭐</button>
-    <button data-tab="add" data-t="t_add">+ Add toilet</button>
+    <button data-tab="add" data-t="t_add">+ Add</button>
     <button data-tab="info" data-t="t_info">Help</button>
   </div>
   <div class="pane on" id="p-list"><div class="status" id="status">Choose your area or tap “My location”.</div><div id="list"></div></div>
   <div class="pane" id="p-saved"><div id="savedList"></div></div>
   <div class="pane" id="p-add">
-    <div class="tip" data-t="add_tip">Know a toilet that isn't listed? Tap on the map to drop a pin (or use your current spot), fill in what you know and save it. It is stored on this phone; use “Share to OpenStreetMap” to add it for everyone.</div>
+    <div class="tip" id="addTip">Know a toilet that isn't listed? Tap on the map to drop a pin (or use your current spot), fill in what you know and save it. It is stored on this phone; use “Share to OpenStreetMap” to add it for everyone.</div>
     <form id="addForm">
-      <label class="f"><span data-t="name">Name / landmark</span><input id="aName" required placeholder="e.g. BMC toilet near Dadar station W"></label>
+      <label class="f"><span data-t="name">Name / landmark</span><input id="aName" required placeholder="e.g. BMC toilet near Dadar stn W / Dadar Police Station"></label>
       <label class="f"><span data-t="pinloc">Location</span><input id="aLoc" readonly placeholder="Tap the map to choose"></label>
-      <div class="cbx">
+      <label class="f police-only"><span>Station phone (optional)</span><input id="aPhone" inputmode="tel" placeholder="e.g. 022 2414 xxxx"></label>
+      <div class="cbx police-only"><label><input type="checkbox" id="aChowki"> Police chowki / beat post</label><label><input type="checkbox" id="aWd"> Women's desk</label></div>
+      <div class="cbx toilet-only">
         <label><input type="checkbox" id="aW"> Women's</label>
         <label><input type="checkbox" id="aA"> Wheelchair</label>
         <label><input type="checkbox" id="aB"> Baby change</label>
@@ -802,7 +806,7 @@ label.f input,label.f select{display:block;width:100%;font:inherit;padding:10px;
         <label><input type="checkbox" id="a24"> 24 hrs</label>
         <label><input type="checkbox" id="aWs"> Western seat</label>
       </div>
-      <button class="btn pri" type="submit" data-t="save">Save toilet</button>
+      <button class="btn pri" type="submit" id="saveBtn">Save</button>
       <button class="btn out" type="button" id="aHere" data-t="usehere">Use my current spot</button>
     </form>
   </div>
@@ -826,15 +830,15 @@ const store={get(k,d){try{const v=localStorage.getItem("ss_"+k);return v?JSON.pa
 
 /* ---------- i18n ---------- */
 const T={
-en:{app:"SafeStop Mumbai",emg:"I need a toilet NOW",any:"Anyone",woman:"Woman",elder:"Elderly",child:"Child",f_women:"♀ Women's",f_access:"♿ Accessible",f_baby:"🍼 Baby change",f_free:"₹0 Free",f_24:"🌙 24 hrs",f_west:"🚽 Western seat",f_backup:"⛽ Show backups",gps:"My location",t_list:"Nearby",t_saved:"Saved ⭐",t_add:"+ Add toilet",t_info:"Help",go:"Start walking directions",near:"Nearest toilet",walk:"min walk",save:"Save toilet",usehere:"Use my current spot",name:"Name / landmark",pinloc:"Location",
+en:{app:"SafeStop Mumbai",m_toilet:"Toilets",m_police:"Police",emg_p:"Nearest police station NOW",near_p:"Nearest police station",call:"Call station",emg:"I need a toilet NOW",any:"Anyone",woman:"Woman",elder:"Elderly",child:"Child",f_women:"♀ Women's",f_access:"♿ Accessible",f_baby:"🍼 Baby change",f_free:"₹0 Free",f_24:"🌙 24 hrs",f_west:"🚽 Western seat",f_backup:"⛽ Show backups",gps:"My location",t_list:"Nearby",t_saved:"Saved ⭐",t_add:"+ Add",t_info:"Help",go:"Start walking directions",near:"Nearest toilet",walk:"min walk",save:"Save toilet",usehere:"Use my current spot",name:"Name / landmark",pinloc:"Location",
  add_tip:"Know a toilet that isn't listed? Tap on the map to drop a pin (or use your current spot), fill in what you know and save it. It is stored on this phone; use “Share to OpenStreetMap” to add it for everyone."},
-hi:{app:"सेफस्टॉप मुंबई",emg:"मुझे अभी शौचालय चाहिए",any:"कोई भी",woman:"महिला",elder:"बुज़ुर्ग",child:"बच्चा",f_women:"♀ महिलाओं के लिए",f_access:"♿ व्हीलचेयर",f_baby:"🍼 बेबी चेंजिंग",f_free:"₹0 मुफ़्त",f_24:"🌙 24 घंटे",f_west:"🚽 वेस्टर्न सीट",f_backup:"⛽ विकल्प दिखाएँ",gps:"मेरी लोकेशन",t_list:"आस-पास",t_saved:"सेव ⭐",t_add:"+ जोड़ें",t_info:"मदद",go:"पैदल रास्ता दिखाएँ",near:"सबसे पास का शौचालय",walk:"मिनट पैदल",save:"सेव करें",usehere:"मेरी जगह इस्तेमाल करें",name:"नाम / पहचान",pinloc:"जगह",
+hi:{app:"सेफस्टॉप मुंबई",m_toilet:"शौचालय",m_police:"पुलिस",emg_p:"सबसे पास का पुलिस स्टेशन",near_p:"सबसे पास का पुलिस स्टेशन",call:"स्टेशन को कॉल करें",emg:"मुझे अभी शौचालय चाहिए",any:"कोई भी",woman:"महिला",elder:"बुज़ुर्ग",child:"बच्चा",f_women:"♀ महिलाओं के लिए",f_access:"♿ व्हीलचेयर",f_baby:"🍼 बेबी चेंजिंग",f_free:"₹0 मुफ़्त",f_24:"🌙 24 घंटे",f_west:"🚽 वेस्टर्न सीट",f_backup:"⛽ विकल्प दिखाएँ",gps:"मेरी लोकेशन",t_list:"आस-पास",t_saved:"सेव ⭐",t_add:"+ जोड़ें",t_info:"मदद",go:"पैदल रास्ता दिखाएँ",near:"सबसे पास का शौचालय",walk:"मिनट पैदल",save:"सेव करें",usehere:"मेरी जगह इस्तेमाल करें",name:"नाम / पहचान",pinloc:"जगह",
  add_tip:"कोई शौचालय सूची में नहीं है? मैप पर टैप करके पिन लगाएँ, जानकारी भरें और सेव करें। यह इसी फ़ोन पर सेव होता है।"},
-mr:{app:"सेफस्टॉप मुंबई",emg:"मला आत्ता शौचालय हवे",any:"कोणीही",woman:"महिला",elder:"ज्येष्ठ",child:"मूल",f_women:"♀ महिलांसाठी",f_access:"♿ व्हीलचेअर",f_baby:"🍼 बेबी चेंजिंग",f_free:"₹0 मोफत",f_24:"🌙 24 तास",f_west:"🚽 वेस्टर्न सीट",f_backup:"⛽ पर्याय दाखवा",gps:"माझे ठिकाण",t_list:"जवळपास",t_saved:"सेव्ह ⭐",t_add:"+ जोडा",t_info:"मदत",go:"चालत जाण्याचा मार्ग",near:"सर्वात जवळचे शौचालय",walk:"मिनिटे चालत",save:"सेव्ह करा",usehere:"माझे ठिकाण वापरा",name:"नाव / खूण",pinloc:"ठिकाण",
+mr:{app:"सेफस्टॉप मुंबई",m_toilet:"शौचालय",m_police:"पोलीस",emg_p:"सर्वात जवळचे पोलीस स्टेशन",near_p:"सर्वात जवळचे पोलीस स्टेशन",call:"स्टेशनला कॉल करा",emg:"मला आत्ता शौचालय हवे",any:"कोणीही",woman:"महिला",elder:"ज्येष्ठ",child:"मूल",f_women:"♀ महिलांसाठी",f_access:"♿ व्हीलचेअर",f_baby:"🍼 बेबी चेंजिंग",f_free:"₹0 मोफत",f_24:"🌙 24 तास",f_west:"🚽 वेस्टर्न सीट",f_backup:"⛽ पर्याय दाखवा",gps:"माझे ठिकाण",t_list:"जवळपास",t_saved:"सेव्ह ⭐",t_add:"+ जोडा",t_info:"मदत",go:"चालत जाण्याचा मार्ग",near:"सर्वात जवळचे शौचालय",walk:"मिनिटे चालत",save:"सेव्ह करा",usehere:"माझे ठिकाण वापरा",name:"नाव / खूण",pinloc:"ठिकाण",
  add_tip:"यादीत नसलेले शौचालय माहीत आहे? नकाशावर टॅप करून पिन लावा, माहिती भरा आणि सेव्ह करा. हे याच फोनवर सेव्ह होते."}};
 let lang=store.get("lang","en");
 const t=k=>(T[lang]&&T[lang][k])||T.en[k]||k;
-function applyLang(){document.querySelectorAll("[data-t]").forEach(el=>{el.textContent=t(el.dataset.t)});document.documentElement.lang=lang}
+function applyLang(){const et=document.getElementById('emgTxt');if(et)et.textContent=mode==='police'?t('emg_p'):t('emg');document.querySelectorAll("[data-t]").forEach(el=>{el.textContent=t(el.dataset.t)});document.documentElement.lang=lang}
 
 /* ---------- areas ---------- */
 const AREAS=[["CSMT / Fort",18.9400,72.8353],["Colaba",18.9067,72.8147],["Marine Drive / Churchgate",18.9440,72.8235],["Lower Parel",18.9953,72.8302],["Dadar",19.0178,72.8478],["Sion",19.0390,72.8619],["Bandra",19.0596,72.8295],["Kurla",19.0726,72.8845],["Chembur",19.0522,72.9005],["Ghatkopar",19.0860,72.9081],["Vile Parle",19.0990,72.8492],["Juhu",19.1075,72.8263],["Andheri",19.1197,72.8468],["Powai",19.1176,72.9060],["Goregaon",19.1663,72.8526],["Malad",19.1874,72.8484],["Mulund",19.1726,72.9425],["Borivali",19.2307,72.8567],["Thane",19.2183,72.9781],["Vashi",19.0771,72.9986]];
@@ -842,7 +846,7 @@ const areaSel=document.getElementById("area");
 areaSel.innerHTML='<option value="">📌 Choose area…</option>'+AREAS.map((a,i)=>`<option value="${i}">${a[0]}</option>`).join("");
 
 /* ---------- state ---------- */
-let me=null, places=[], who="any", filters=new Set(), map=null, layer=null, meMarker=null, addPin=null, addLatLng=null;
+let mode=store.get("mode","toilet"), me=null, places=[], who="any", filters=new Set(), map=null, layer=null, meMarker=null, addPin=null, addLatLng=null;
 const ratings=store.get("ratings",{}), reports=store.get("reports",{}), saved=store.get("saved",{}), mine=store.get("mine",[]);
 if(store.get("big",false))document.body.classList.add("big");
 
@@ -867,7 +871,7 @@ function initMap(){
   layer=L.layerGroup().addTo(map);
   map.on("click",e=>{ if(currentTab==="add"){setAddPin(e.latlng.lat,e.latlng.lng)} });
 }
-function pinIcon(p){const col=p.backup?"#d97706":p.mine?"#7c3aed":(p.female==="yes"?"#db2777":"#0f766e");
+function pinIcon(p){if(p.kind==="police")return L.divIcon({className:"",html:`<div class="pin" style="background:${p.mine?"#7c3aed":"#1d4ed8"}"><span>🚓</span></div>`,iconSize:[30,30],iconAnchor:[15,30]});const col=p.backup?"#d97706":p.mine?"#7c3aed":(p.female==="yes"?"#db2777":"#0f766e");
   return L.divIcon({className:"",html:`<div class="pin" style="background:${col}"><span>${p.backup?(p.kind==="fuel"?"⛽":p.kind==="mall"?"🏬":"🚉"):"🚻"}</span></div>`,iconSize:[30,30],iconAnchor:[15,30]})}
 function setMe(lat,lon,label){
   me={lat,lon,label};
@@ -887,6 +891,8 @@ async function overpass(q){
   }
   throw lastErr;
 }
+function normPolice(el){const tg=el.tags||{};const lat=el.lat??el.center?.lat, lon=el.lon??el.center?.lon;const nm=tg.name||tg["name:en"]||"Police station";
+  return {id:el.type[0]+el.id,lat,lon,kind:"police",name:nm,operator:tg.operator||"",phone:tg.phone||tg["contact:phone"]||"",hours:tg.opening_hours||"",chowki:/chowk|chauk|beat|outpost|booth/i.test(nm)||/booth|checkpoint/.test(tg.police||""),desc:tg.description||"",tags:tg}}
 function norm(el,backup){const tg=el.tags||{};const lat=el.lat??el.center?.lat, lon=el.lon??el.center?.lon;
   let kind="toilet"; if(backup){kind=tg.amenity==="fuel"?"fuel":tg.shop==="mall"?"mall":"station"}
   return {id:el.type[0]+el.id,lat,lon,backup,kind,
@@ -897,24 +903,26 @@ function norm(el,backup){const tg=el.tags||{};const lat=el.lat??el.center?.lat, 
     water:tg.drinking_water||"",access:tg.access||"",desc:tg.description||"",tags:tg}}
 async function load(){
   if(!me)return;
-  const st=$("status"); st.textContent="Searching toilets near "+(me.label||"you")+"…";
-  const R=2500,a=`(around:${R},${me.lat},${me.lon})`;
-  const q=`[out:json][timeout:25];(nwr["amenity"="toilets"]${a};${filters.has("backup")?`nwr["amenity"="fuel"]${a};nwr["shop"="mall"]${a};nwr["railway"="station"]${a};`:""});out center tags 200;`;
+  const st=$("status"); st.textContent="Searching "+(mode==="police"?"police stations":"toilets")+" near "+(me.label||"you")+"…";
+  const R=mode==="police"?5000:2500,a=`(around:${R},${me.lat},${me.lon})`;
+  const q=mode==="police"?`[out:json][timeout:25];(nwr["amenity"="police"]${a};);out center tags 200;`:`[out:json][timeout:25];(nwr["amenity"="toilets"]${a};${filters.has("backup")?`nwr["amenity"="fuel"]${a};nwr["shop"="mall"]${a};nwr["railway"="station"]${a};`:""});out center tags 200;`;
   let live=[];
   try{const j=await overpass(q);
-    live=j.elements.map(el=>{const tg=el.tags||{};return norm(el,tg.amenity!=="toilets")}).filter(p=>p.lat&&p.access!=="private"&&p.access!=="no");
-    store.set("cache",{at:Date.now(),me,live});
+    live=mode==="police"?j.elements.map(normPolice).filter(p=>p.lat):j.elements.map(el=>{const tg=el.tags||{};return norm(el,tg.amenity!=="toilets")}).filter(p=>p.lat&&p.access!=="private"&&p.access!=="no");
+    store.set("cache_"+mode,{at:Date.now(),me,live});
   }catch(e){
-    const c=store.get("cache",null);
+    const c=store.get("cache_"+mode,null);
     if(c&&hav(c.me.lat,c.me.lon,me.lat,me.lon)<1500){live=c.live;toast("Offline – showing last saved results")}
-    else toast("Couldn't reach live toilet data. Showing your saved & added toilets.");
+    else toast("Couldn't reach live data. Showing your saved & added places.");
   }
-  places=live.concat(mine.map(m=>({...m,mine:true})));
+  places=live.concat(mine.filter(m=>(m.kind==="police")===(mode==="police")).map(m=>({...m,mine:true})));
   render();
 }
 
 /* ---------- filtering & ranking ---------- */
 function matches(p){
+  if(mode==="police")return p.kind==="police";
+  if(p.kind==="police")return false;
   if(p.backup) return filters.has("backup");
   if(filters.has("women")&&!(p.female==="yes"||p.mine&&p.female==="yes"))return false;
   if(filters.has("access")&&p.wheelchair!=="yes")return false;
@@ -927,6 +935,7 @@ function matches(p){
 }
 function score(p){ // lower is better: distance with bonuses for profile needs & community rating
   let d=p.dist; const rep=reports[p.id]||{};
+  if(p.kind==="police"){if(p.chowki)d*=1.1; if(rep.closed||rep.wrong)d*=3; return d}
   if(p.backup)d*=1.6;
   if(who==="woman"&&p.female==="yes")d*=.8;
   if(who==="elder"&&(p.wheelchair==="yes"||p.seated))d*=.8;
@@ -939,6 +948,7 @@ function visible(){ if(!me)return Object.values(saved);
   return places.map(p=>({...p,dist:hav(me.lat,me.lon,p.lat,p.lon)})).filter(matches).sort((a,b)=>score(a)-score(b)) }
 
 function tagsHTML(p){const o=[];
+  if(p.kind==="police"){if(p.mine)o.push(`<span class="tag b">Added by you</span>`);o.push(p.chowki?`<span class="tag">Chowki / beat post</span>`:`<span class="tag b">Police station</span>`);if(p.womenDesk)o.push(`<span class="tag p">♀ Women's desk</span>`);if(p.phone)o.push(`<span class="tag g">📞 ${esc(p.phone)}</span>`);if(p.hours)o.push(`<span class="tag">⏰ ${esc(p.hours)}</span>`);const r=reports[p.id]||{};if(r.closed)o.push(`<span class="tag r">Reported closed</span>`);if(r.wrong)o.push(`<span class="tag r">Wrong location</span>`);return o.join("")}
   if(p.backup)o.push(`<span class="tag">May have toilet – ask staff</span>`);
   if(p.mine)o.push(`<span class="tag b">Added by you</span>`);
   if(p.female==="yes")o.push(`<span class="tag p">♀ Women</span>`);
@@ -953,20 +963,20 @@ function tagsHTML(p){const o=[];
   return o.join("");}
 
 function itemHTML(p){return `<div class="item" data-id="${p.id}">
-  <div class="ic ${p.backup?"bk":""}">${p.backup?(p.kind==="fuel"?"⛽":p.kind==="mall"?"🏬":"🚉"):"🚻"}</div>
+  <div class="ic ${p.backup?"bk":""}">${p.kind==="police"?"🚓":p.backup?(p.kind==="fuel"?"⛽":p.kind==="mall"?"🏬":"🚉"):"🚻"}</div>
   <div style="flex:1;min-width:0"><h3>${esc(p.name)}</h3>${p.operator?`<div class="meta">${esc(p.operator)}</div>`:""}<div class="tags">${tagsHTML(p)}</div></div>
   ${p.dist!=null?`<div class="dist">${fmtD(p.dist)}<small>${walkMin(p.dist)} ${t("walk")}</small></div>`:""}</div>`}
 
 function render(){
   const v=visible(), list=$("list"), st=$("status");
   if(layer){layer.clearLayers(); v.slice(0,120).forEach(p=>L.marker([p.lat,p.lon],{icon:pinIcon(p)}).on("click",()=>openDetail(p)).addTo(layer))}
-  if(!me){st.textContent="Choose your area or tap “My location”.";list.innerHTML="";return}
-  st.textContent=v.length?`${v.length} places within 2.5 km of ${me.label||"you"} · best match first`:"";
-  list.innerHTML=v.length?v.slice(0,60).map(itemHTML).join(""):`<div class="empty">No toilets match these filters nearby.<br>Try removing a filter or turn on “⛽ Show backups” (petrol pumps, malls, stations).</div>`;
+  if(!me){st.textContent="Choose your area or tap “My location”.";list.innerHTML="";renderSaved();return}
+  st.textContent=v.length?`${v.length} ${mode==="police"?"police stations within 5":"places within 2.5"} km of ${me.label||"you"} · best match first`:"";
+  list.innerHTML=v.length?v.slice(0,60).map(itemHTML).join(""):mode==="police"?`<div class="empty">No police station found on the map nearby.<br><b>In danger? Call 112 now.</b><br>Know one? Add it from “+ Add”.</div>`:`<div class="empty">No toilets match these filters nearby.<br>Try removing a filter or turn on “⛽ Show backups” (petrol pumps, malls, stations).</div>`;
   list.querySelectorAll(".item").forEach(el=>el.onclick=()=>openDetail(v.find(p=>p.id===el.dataset.id)));
   renderSaved();
 }
-function renderSaved(){const s=Object.values(saved).map(p=>me?{...p,dist:hav(me.lat,me.lon,p.lat,p.lon)}:p);
+function renderSaved(){const s=Object.values(saved).filter(p=>(p.kind==="police")===(mode==="police")).map(p=>me?{...p,dist:hav(me.lat,me.lon,p.lat,p.lon)}:p);
   $("savedList").innerHTML=s.length?s.map(itemHTML).join(""):`<div class="empty">Tap ⭐ on any toilet to save it here – handy for your daily route, office or a parent's regular places.</div>`;
   $("savedList").querySelectorAll(".item").forEach(el=>el.onclick=()=>openDetail(s.find(p=>p.id===el.dataset.id)));}
 
@@ -975,7 +985,8 @@ function sheet(html){$("sheetBox").innerHTML='<button class="x" onclick="documen
 $("sheet").onclick=e=>{if(e.target.id==="sheet")$("sheet").classList.remove("show")};
 
 function openDetail(p){
-  if(!p)return; if(me&&p.dist==null)p.dist=hav(me.lat,me.lon,p.lat,p.lon);
+  if(!p)return;
+  if(p.kind==="police")return openPolice(p); if(me&&p.dist==null)p.dist=hav(me.lat,me.lon,p.lat,p.lon);
   const r=reports[p.id]||{}, isSaved=!!saved[p.id];
   sheet(`<h2>${esc(p.name)}</h2>
    ${p.dist!=null?`<div class="meta">${fmtD(p.dist)} · about ${walkMin(p.dist)} ${t("walk")}</div>`:""}
@@ -996,11 +1007,32 @@ function openDetail(p){
   $("sheetBox").querySelectorAll("[data-r]").forEach(b=>b.onclick=()=>{const k=b.dataset.r;reports[p.id]=reports[p.id]||{};reports[p.id][k]=!reports[p.id][k];store.set("reports",reports);openDetail(p);render()});
   if(p.mine)$("dDel").onclick=()=>{const i=mine.findIndex(m=>m.id===p.id);if(i>-1)mine.splice(i,1);store.set("mine",mine);delete saved[p.id];store.set("saved",saved);$("sheet").classList.remove("show");places=places.filter(x=>x.id!==p.id);render()};
 }
+function telLink(n){return "tel:"+String(n).split(/[;,/]/)[0].replace(/[^0-9+]/g,"")}
+function openPolice(p){
+  if(!p)return; if(me&&p.dist==null)p.dist=hav(me.lat,me.lon,p.lat,p.lon);
+  const r=reports[p.id]||{}, isSaved=!!saved[p.id];
+  sheet(`<h2>🚓 ${esc(p.name)}</h2>
+   ${p.dist!=null?`<div class="meta">${fmtD(p.dist)} · ~${walkMin(p.dist)} ${t("walk")}</div>`:""}
+   <div class="tags">${tagsHTML(p)}</div>
+   <a class="btn call112" href="tel:112">📞 Call 112 (Emergency)</a>
+   ${p.phone?`<a class="btn pri" href="${telLink(p.phone)}">📞 ${t("call")}: ${esc(p.phone)}</a>`:""}
+   <div class="grid2"><a class="btn out" href="${dirURL(p)}" target="_blank" rel="noopener">🚶 Walk</a><a class="btn out" href="${dirURL(p).replace("walking","driving")}" target="_blank" rel="noopener">🛺 Auto / car</a></div>
+   <div class="grid2"><button class="btn out" id="dSave">${isSaved?"★ Saved":"☆ Save"}</button><button class="btn out" id="dShare">📤 Share</button></div>
+   <div class="sec">Report a problem</div>
+   <div class="rep">${[["closed","🔒 Closed / moved"],["wrong","📍 Wrong location"]].map(([k,l])=>`<button class="chip ${r[k]?"on":""}" data-r="${k}">${l}</button>`).join("")}</div>
+   <dl class="kv">${p.operator?`<dt>Under</dt><dd>${esc(p.operator)}</dd>`:""}${p.desc?`<dt>Note</dt><dd>${esc(p.desc)}</dd>`:""}<dt>Data</dt><dd>${p.mine?"Added on this phone":"OpenStreetMap"}</dd></dl>
+   ${!p.mine?`<a class="btn out" href="https://www.openstreetmap.org/${{n:"node",w:"way",r:"relation"}[p.id[0]]}/${p.id.slice(1)}" target="_blank" rel="noopener">✏️ Fix details on OpenStreetMap</a>`:`<button class="btn out" id="dDel" style="color:var(--red)">Delete my entry</button>`}`);
+  $("dSave").onclick=()=>{if(saved[p.id])delete saved[p.id];else saved[p.id]={...p,dist:undefined};store.set("saved",saved);openPolice(p);renderSaved()};
+  $("dShare").onclick=()=>copy(`${p.name} – police: https://maps.google.com/?q=${p.lat},${p.lon}${p.phone?" · "+p.phone:""}`);
+  $("sheetBox").querySelectorAll("[data-r]").forEach(b=>b.onclick=()=>{const k=b.dataset.r;reports[p.id]=reports[p.id]||{};reports[p.id][k]=!reports[p.id][k];store.set("reports",reports);openPolice(p);render()});
+  if(p.mine)$("dDel").onclick=()=>{const i=mine.findIndex(m=>m.id===p.id);if(i>-1)mine.splice(i,1);store.set("mine",mine);delete saved[p.id];store.set("saved",saved);$("sheet").classList.remove("show");places=places.filter(x=>x.id!==p.id);render()};
+}
 async function copy(txt){try{await navigator.clipboard.writeText(txt);toast("Copied – paste it in WhatsApp/SMS")}catch(e){sheet(`<h2>Share</h2><div class="copybox">${esc(txt)}</div><a class="btn wa" href="https://wa.me/?text=${encodeURIComponent(txt)}" target="_blank" rel="noopener">Send on WhatsApp</a>`)}}
 
 /* ---------- emergency ---------- */
 function emergency(){
   if(!me){ gps(true); return }
+  if(mode==="police")return emergencyPolice();
   const v=visible().filter(p=>!(reports[p.id]||{}).closed);
   const best=v.find(p=>!p.backup)||v[0];
   if(!best){sheet(`<h2>No toilet found nearby</h2><p class="meta">Nearest safe options in Mumbai when no public toilet is around:</p><ul style="margin:10px 0 0 18px;line-height:1.8"><li>Petrol pumps (legally must allow toilet use)</li><li>Railway station platforms</li><li>Malls, hospitals, big hotels & restaurants</li><li>Metro stations</li></ul><button class="btn pri" id="eBk">⛽ Show backups on map</button>`);
@@ -1015,6 +1047,20 @@ function emergency(){
   $("eSos").onclick=sos;
 }
 
+function emergencyPolice(){
+  const v=visible().filter(p=>!(reports[p.id]||{}).closed);
+  const best=v.find(p=>!p.chowki)||v[0], chow=v[0]&&v[0]!==best&&v[0].chowki?v[0]:null;
+  sheet(`<h2>🚓 ${t("near_p")}</h2>
+   <a class="btn red" href="tel:112">📞 In danger? Call 112 now</a>
+   ${best?`<div class="big-card" style="border-color:#1d4ed8"><div class="d" style="color:#1d4ed8">${fmtD(best.dist)}</div><div><b>${esc(best.name)}</b> · ~${walkMin(best.dist)} ${t("walk")}</div><div class="tags">${tagsHTML(best)}</div>
+     ${best.phone?`<a class="btn pri" href="${telLink(best.phone)}">📞 ${t("call")}</a>`:""}
+     <div class="grid2"><a class="btn out" href="${dirURL(best)}" target="_blank" rel="noopener">🚶 Walk</a><a class="btn out" href="${dirURL(best).replace("walking","driving")}" target="_blank" rel="noopener">🛺 Auto / car</a></div></div>`
+     :`<div class="empty">No police station on the map near you. Call 112, or add one you know from “+ Add”.</div>`}
+   ${chow?`<div class="sec">Closer: police chowki</div>`+itemHTML(chow):""}
+   <button class="btn out" id="eSos">More helplines & share location</button>`);
+  $("sheetBox").querySelectorAll(".item").forEach(el=>el.onclick=()=>openPolice(chow));
+  $("eSos").onclick=sos;
+}
 /* ---------- SOS ---------- */
 const HELP=[["112","Emergency (Police / Fire / Ambulance)"],["1091","Women helpline (Police)"],["181","Women helpline"],["1098","Childline"],["14567","Elderline – senior citizens"],["108","Ambulance"],["1916","BMC / MCGM helpline (toilet complaints)"]];
 function sos(){
@@ -1039,16 +1085,17 @@ function gps(thenEmg){
 function setAddPin(lat,lon){addLatLng={lat,lon};$("aLoc").value=lat.toFixed(5)+", "+lon.toFixed(5);
   if(map){if(addPin)addPin.remove();addPin=L.marker([lat,lon],{icon:L.divIcon({className:'',html:'<div class="pin" style="background:#7c3aed"><span>➕</span></div>',iconSize:[30,30],iconAnchor:[15,30]})}).addTo(map)}}
 $("aHere").onclick=()=>{if(me)setAddPin(me.lat,me.lon);else toast("Set your location first")};
-$("addForm").onsubmit=e=>{e.preventDefault();if(!addLatLng){toast("Tap the map to place the toilet");return}
-  const p={id:"m"+Date.now(),lat:addLatLng.lat,lon:addLatLng.lon,name:$("aName").value.trim(),female:$("aW").checked?"yes":"",wheelchair:$("aA").checked?"yes":"",baby:$("aB").checked?"yes":"",fee:$("aF").checked?"no":"",hours:$("a24").checked?"24/7":"",seated:$("aWs").checked,mine:true};
+$("addForm").onsubmit=e=>{e.preventDefault();if(!addLatLng){toast("Tap the map to place it");return}
+  const p=mode==="police"?{id:"m"+Date.now(),kind:"police",lat:addLatLng.lat,lon:addLatLng.lon,name:$("aName").value.trim(),phone:$("aPhone").value.trim(),chowki:$("aChowki").checked,womenDesk:$("aWd").checked,mine:true}:{id:"m"+Date.now(),lat:addLatLng.lat,lon:addLatLng.lon,name:$("aName").value.trim(),female:$("aW").checked?"yes":"",wheelchair:$("aA").checked?"yes":"",baby:$("aB").checked?"yes":"",fee:$("aF").checked?"no":"",hours:$("a24").checked?"24/7":"",seated:$("aWs").checked,mine:true};
   mine.push(p);store.set("mine",mine);places.push(p);$("addForm").reset();addLatLng=null;if(addPin){addPin.remove();addPin=null}
-  render();toast("Saved on this phone ✓");
-  sheet(`<h2>Saved ✓</h2><p>Want everyone in Mumbai to find it? Add it to OpenStreetMap (free account) – this app reads from there.</p><a class="btn pri" href="https://www.openstreetmap.org/edit#map=19/${p.lat}/${p.lon}" target="_blank" rel="noopener">Share to OpenStreetMap</a>`);
+  render();toast("Saved on this phone ✓");const what=mode==="police"?"police station":"toilet";
+  sheet(`<h2>Saved ✓</h2><p>Want everyone in Mumbai to find this ${what}? Add it to OpenStreetMap (free account) – this app reads from there.</p><a class="btn pri" href="https://www.openstreetmap.org/edit#map=19/${p.lat}/${p.lon}" target="_blank" rel="noopener">Share to OpenStreetMap</a>`);
 };
 
 /* ---------- help tab ---------- */
 $("p-info").innerHTML=`
  <div class="tip"><b>How it works</b><br>Toilet locations come live from OpenStreetMap, the free community map. Results are ranked by distance and by who needs it: women see women's toilets first, elderly see accessible & western-seat toilets first, children see baby-changing first. Your ratings and reports move toilets up or down.</div>
+ <div class="tip"><b>🚓 Police mode:</b> switch at the top to find the nearest police station or chowki, call it in one tap, or call 112. Missing one? Add it from “+ Add”.</div>
  <div class="tip"><b>No toilet nearby?</b> Petrol pumps, railway & metro stations, malls, hospitals and big restaurants are usually your best bet. Turn on “⛽ Show backups”.</div>
  <div class="tip"><b>For elders:</b> tap <b>A+</b> for large text. Save regular places with ⭐ so they're one tap away.</div>
  <div class="tip"><b>Install it:</b> once hosted, open it in Chrome → menu → “Add to Home screen”. It then opens like an app and remembers your last results when offline.</div>
@@ -1056,7 +1103,7 @@ $("p-info").innerHTML=`
 
 /* ---------- wiring ---------- */
 let currentTab="list";
-document.querySelectorAll(".tabs button").forEach(b=>b.onclick=()=>{currentTab=b.dataset.tab;document.querySelectorAll(".tabs button").forEach(x=>x.classList.toggle("on",x===b));document.querySelectorAll(".pane").forEach(p=>p.classList.toggle("on",p.id==="p-"+currentTab));if(currentTab==="add")toast("Tap on the map to place the toilet")});
+document.querySelectorAll(".tabs button").forEach(b=>b.onclick=()=>{currentTab=b.dataset.tab;document.querySelectorAll(".tabs button").forEach(x=>x.classList.toggle("on",x===b));document.querySelectorAll(".pane").forEach(p=>p.classList.toggle("on",p.id==="p-"+currentTab));if(currentTab==="add")toast("Tap on the map to place the "+(mode==="police"?"police station":"toilet"))});
 function syncChips(){document.querySelectorAll("#chips .chip").forEach(c=>c.classList.toggle("on",filters.has(c.dataset.f)))}
 document.querySelectorAll("#chips .chip").forEach(c=>c.onclick=()=>{const f=c.dataset.f;filters.has(f)?filters.delete(f):filters.add(f);syncChips();f==="backup"?load():render()});
 document.querySelectorAll("#who button").forEach(b=>b.onclick=()=>{who=b.dataset.who;store.set("who",who);document.querySelectorAll("#who button").forEach(x=>x.classList.toggle("on",x===b));
@@ -1070,8 +1117,15 @@ $("sosBtn").onclick=sos;
 $("bigBtn").onclick=()=>{document.body.classList.toggle("big");store.set("big",document.body.classList.contains("big"));setTimeout(()=>map&&map.invalidateSize(),200)};
 $("langBtn").onclick=()=>{lang={en:"hi",hi:"mr",mr:"en"}[lang];store.set("lang",lang);applyLang();render()};
 
+function setMode(m){mode=m;store.set("mode",m);document.body.classList.toggle("police",m==="police");
+  document.querySelectorAll("#modes button").forEach(b=>b.classList.toggle("on",b.dataset.mode===m));
+  $("addTip").textContent=m==="police"?"Know a police station or chowki that isn't listed? Tap the map to drop a pin (or use your current spot), add its name and phone, and save. It's stored on this phone; use “Share to OpenStreetMap” to add it for everyone.":t("add_tip");
+  $("saveBtn").textContent=m==="police"?"Save police station":"Save toilet";
+  try{document.querySelector('meta[name=theme-color]').setAttribute("content",m==="police"?"#1e3a8a":"#0f766e")}catch(e){}
+  applyLang(); if(me)load(); else render();}
+document.querySelectorAll("#modes button").forEach(b=>b.onclick=()=>setMode(b.dataset.mode));
 /* ---------- start ---------- */
-applyLang(); initMap();
+initMap(); setMode(mode);
 const w=store.get("who","any"); const wb=document.querySelector(`#who [data-who="${w}"]`); if(wb)wb.click();
 const lastArea=store.get("area","");
 if(lastArea!==""&&AREAS[lastArea]){areaSel.value=lastArea;setMe(AREAS[lastArea][1],AREAS[lastArea][2],AREAS[lastArea][0])}
