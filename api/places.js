@@ -72,12 +72,20 @@ module.exports = async (req, res) => {
   res.setHeader("Content-Type", "application/json");
   if (hit) { res.setHeader("X-Cache", "HIT"); return res.status(200).end(hit); }
   if (n && n > 150) return res.status(429).json({ error: "Too many searches – try again in a while" });
+  // Keep a 30-day backup copy of every answer. If the map servers are slow (>12 s) and we have a backup,
+  // answer with the backup straight away rather than keep the person waiting.
+  const staleKey = "ovps:" + key.slice(4);
+  const [stale] = await redis([["GET", staleKey]]);
+  const live = fromOverpass(q).then(async (text) => {
+    if (text.length < 900000) await redis([["SET", key, text, "EX", TTL], ["SET", staleKey, text, "EX", 30 * 86400]]);
+    return text;
+  });
   try {
-    const text = await fromOverpass(q);
-    if (text.length < 900000) await redis([["SET", key, text, "EX", TTL]]);
-    res.setHeader("X-Cache", "MISS");
-    return res.status(200).end(text);
+    const text = await (stale ? Promise.race([live, new Promise((r) => setTimeout(() => r(null), 12000))]) : live);
+    if (text) { res.setHeader("X-Cache", "MISS"); return res.status(200).end(text); }
+    res.setHeader("X-Cache", "STALE"); return res.status(200).end(stale);
   } catch (e) {
+    if (stale) { res.setHeader("X-Cache", "STALE"); return res.status(200).end(stale); }
     return res.status(502).json({ error: "Map data server is busy" });
   }
 };

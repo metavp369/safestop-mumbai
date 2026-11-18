@@ -1020,23 +1020,34 @@ function norm(el,backup){const tg=el.tags||{};const lat=el.lat??el.center?.lat, 
     seated:/seated/.test(tg["toilets:position"]||""),squat:/squat/.test(tg["toilets:position"]||""),operator:tg.operator||"",
     water:tg.drinking_water||"",access:tg.access||"",desc:tg.description||"",tags:tg}}
 async function load(){
-  if(!me)return;
-  const st=$("status"); st.textContent="Searching "+(mode==="safe"?"safe spots":mode==="police"?"police stations":mode==="medical"?"hospitals & medical stores":"toilets")+" near "+(me.label||"you")+"…";
-  const R=mode==="police"?5000:mode==="medical"?3000:mode==="safe"?2000:2500;
-  const slow=setTimeout(()=>{if(st.textContent.startsWith("Searching"))st.textContent="Still searching… the free map data server is busy right now. Hang on a few more seconds. In an emergency, use SOS."},9000);
-  const q=buildQuery(mode,me.lat,me.lon,filters.has("backup"));
-  let live=[];
+  if(!me)return; const at=me, m=mode, t0=Date.now();
+  const st=$("status"), what=m==="safe"?"safe spots":m==="police"?"police stations":m==="medical"?"hospitals & medical stores":"toilets", near=at.label||"you";
+  const R=m==="police"?5000:m==="medical"?3000:m==="safe"?2000:2500;
+  const ownMine=()=>mine.filter(x=>modeOf(x)===m).map(x=>({...x,mine:true,community:String(x.id)[0]==="c"}));
+  const since=t=>{const n=Math.round((Date.now()-t)/60000);return n<1?"just now":n<60?n+" min ago":n<1440?Math.round(n/60)+" h ago":Math.round(n/1440)+" days ago"};
+  // 1) Instant: if this phone searched here in the last 3 days, show those results now and refresh in the background.
+  const c=store.get("cache_"+m,null);
+  const stale=c&&c.live&&c.me&&hav(c.me.lat,c.me.lon,at.lat,at.lon)<800&&Date.now()-c.at<3*864e5?c:null;
+  if(stale){places=stale.live.concat(ownMine());render();loadCommunity()}
+  const say=()=>{const s=Math.round((Date.now()-t0)/1000);
+    st.textContent=stale?`Showing ${what} saved ${since(stale.at)} · updating… ${s}s`
+      :s<9?`Searching ${what} near ${near}… ${s}s`:`Still searching (${s}s)… the free map data server is busy right now. In an emergency, use SOS.`};
+  say(); const tick=setInterval(()=>{if(mode!==m||me!==at){clearInterval(tick);return}say()},1000);
+  // 2) Fresh data (our cached server first, public servers as backup)
+  const q=buildQuery(m,at.lat,at.lon,filters.has("backup"));
+  let live=null;
   try{const j=await overpass(q);
-    live=mode==="safe"?j.elements.map(normSafe).filter(p=>p.lat):mode==="medical"?j.elements.map(normMed).filter(p=>p.lat):mode==="police"?j.elements.map(normPolice).filter(p=>p.lat):j.elements.map(el=>{const tg=el.tags||{};return norm(el,tg.amenity!=="toilets")}).filter(p=>p.lat&&p.access!=="private"&&p.access!=="no");
-    live=live.filter(p=>hav(me.lat,me.lon,p.lat,p.lon)<=R);
-    store.set("cache_"+mode,{at:Date.now(),me,live});
+    live=m==="safe"?j.elements.map(normSafe).filter(p=>p.lat):m==="medical"?j.elements.map(normMed).filter(p=>p.lat):m==="police"?j.elements.map(normPolice).filter(p=>p.lat):j.elements.map(el=>{const tg=el.tags||{};return norm(el,tg.amenity!=="toilets")}).filter(p=>p.lat&&p.access!=="private"&&p.access!=="no");
+    live=live.filter(p=>hav(at.lat,at.lon,p.lat,p.lon)<=R);
+    store.set("cache_"+m,{at:Date.now(),me:{lat:at.lat,lon:at.lon,label:at.label},live});
   }catch(e){
-    const c=store.get("cache_"+mode,null);
-    if(c&&hav(c.me.lat,c.me.lon,me.lat,me.lon)<1500){live=c.live;toast("Offline – showing last saved results")}
-    else toast("Couldn't reach live data. Showing your saved & added places.");
+    const old=c&&c.live&&c.me&&hav(c.me.lat,c.me.lon,at.lat,at.lon)<1500?c:null;
+    if(old){live=old.live;toast(`Map server busy – showing results saved ${since(old.at)}`)}
+    else{live=[];toast("Couldn't reach the map data server. Showing your saved & added places. In an emergency, use SOS.")}
   }
-  clearTimeout(slow);
-  places=live.concat(mine.filter(m=>modeOf(m)===mode).map(m=>({...m,mine:true,community:String(m.id)[0]==="c"})));
+  clearInterval(tick);
+  if(mode!==m||me!==at)return; // the person moved or switched mode meanwhile
+  places=live.concat(ownMine());
   render();
   loadCommunity();
 }

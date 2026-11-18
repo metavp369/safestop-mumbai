@@ -62,7 +62,7 @@ async function prewarm(deadline, log) {
     if (!(ttl > DAY / 1000)) {
       const budget = Math.min(25000, deadline - Date.now());
       try { const text = await Promise.race([places.fromOverpass(q), new Promise((_, rej) => setTimeout(() => rej(new Error("slow")), budget))]);
-        if (text.length < 900000) { await redis([["SET", key, text, "EX", places.TTL]]); log.prewarmed++; } }
+        if (text.length < 900000) { await redis([["SET", key, text, "EX", places.TTL], ["SET", "ovps:" + key.slice(4), text, "EX", 30 * 86400]]); log.prewarmed++; } }
       catch (e) { log.prewarmFailed++; fails++; }
     }
     i++; done++;
