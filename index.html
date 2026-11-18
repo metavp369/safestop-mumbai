@@ -960,15 +960,26 @@ function setMe(lat,lon,label){
 
 /* ---------- data: OpenStreetMap via Overpass ---------- */
 const ENDPOINTS=["https://overpass-api.de/api/interpreter","https://overpass.kumi.systems/api/interpreter","https://maps.mail.ru/osm/tools/overpass/api/interpreter"];
+async function overpassDirect(q){
+  // ask the first server; if it hasn't answered in 8 s, also ask the next one, and use whichever answers first
+  return new Promise((resolve,reject)=>{let done=false,fails=0,started=0;
+    const tryEp=i=>{if(done||i>=ENDPOINTS.length)return;started++;const ctl=new AbortController();const to=setTimeout(()=>ctl.abort(),30000);
+      fetch(ENDPOINTS[i],{method:"POST",body:"data="+encodeURIComponent(q),headers:{"Content-Type":"application/x-www-form-urlencoded"},signal:ctl.signal})
+       .then(r=>{clearTimeout(to);if(!r.ok)throw new Error("HTTP "+r.status);return r.json()})
+       .then(j=>{if(!done){done=true;resolve(j)}})
+       .catch(e=>{fails++;if(!done&&started<ENDPOINTS.length)tryEp(started);else if(fails>=started&&!done){done=true;reject(e)}})};
+    tryEp(0); setTimeout(()=>{if(!done&&started<2)tryEp(1)},8000);
+  })}
 async function overpass(q){
-  let lastErr;
-  for(const ep of ENDPOINTS){
-    try{const ctl=new AbortController();const to=setTimeout(()=>ctl.abort(),20000);
-      const r=await fetch(ep,{method:"POST",body:"data="+encodeURIComponent(q),headers:{"Content-Type":"application/x-www-form-urlencoded"},signal:ctl.signal});
-      clearTimeout(to); if(!r.ok)throw new Error("HTTP "+r.status); return await r.json();
-    }catch(e){lastErr=e}
+  // 1) shared 12-hour cache on our own server (fast for anyone after the first search in an area)
+  if(location.protocol.startsWith("http")){
+    try{const ctl=new AbortController();const to=setTimeout(()=>ctl.abort(),45000);
+      const r=await fetch("/api/places",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({q}),signal:ctl.signal});
+      clearTimeout(to); if(r.ok)return await r.json();
+    }catch(e){}
   }
-  throw lastErr;
+  // 2) fall back to asking the public servers directly
+  return overpassDirect(q);
 }
 function normSafe(el){const tg=el.tags||{};const lat=el.lat??el.center?.lat, lon=el.lon??el.center?.lon;
   const a=tg.amenity||"";
@@ -994,17 +1005,20 @@ function norm(el,backup){const tg=el.tags||{};const lat=el.lat??el.center?.lat, 
 async function load(){
   if(!me)return;
   const st=$("status"); st.textContent="Searching "+(mode==="safe"?"safe spots":mode==="police"?"police stations":mode==="medical"?"hospitals & medical stores":"toilets")+" near "+(me.label||"you")+"…";
-  const R=mode==="police"?5000:mode==="medical"?3000:mode==="safe"?2000:2500,a=`(around:${R},${me.lat},${me.lon})`;
+  const R=mode==="police"?5000:mode==="medical"?3000:mode==="safe"?2000:2500,a=`(around:${R+400},${(Math.round(me.lat*200)/200).toFixed(3)},${(Math.round(me.lon*200)/200).toFixed(3)})`;
+  const slow=setTimeout(()=>{if(st.textContent.startsWith("Searching"))st.textContent="Still searching… the free map data server is busy right now. Hang on a few more seconds. In an emergency, use SOS."},9000);
   const q=mode==="safe"?`[out:json][timeout:25];(nwr["amenity"~"^(police|hospital|fuel)$"]${a};nwr["amenity"="pharmacy"]["opening_hours"="24/7"]${a};nwr["railway"="station"]${a};nwr["shop"]["opening_hours"="24/7"]${a};nwr["amenity"~"^(cafe|fast_food|restaurant)$"]["opening_hours"="24/7"]${a};);out center tags 300;`:mode==="medical"?`[out:json][timeout:25];(nwr["amenity"~"^(hospital|clinic|doctors|pharmacy)$"]${a};nwr["healthcare"~"^(hospital|clinic|doctor|pharmacy)$"]${a};nwr["shop"="chemist"]${a};);out center tags 300;`:mode==="police"?`[out:json][timeout:25];(nwr["amenity"="police"]${a};);out center tags 200;`:`[out:json][timeout:25];(nwr["amenity"="toilets"]${a};${filters.has("backup")?`nwr["amenity"="fuel"]${a};nwr["shop"="mall"]${a};nwr["railway"="station"]${a};`:""});out center tags 200;`;
   let live=[];
   try{const j=await overpass(q);
     live=mode==="safe"?j.elements.map(normSafe).filter(p=>p.lat):mode==="medical"?j.elements.map(normMed).filter(p=>p.lat):mode==="police"?j.elements.map(normPolice).filter(p=>p.lat):j.elements.map(el=>{const tg=el.tags||{};return norm(el,tg.amenity!=="toilets")}).filter(p=>p.lat&&p.access!=="private"&&p.access!=="no");
+    live=live.filter(p=>hav(me.lat,me.lon,p.lat,p.lon)<=R);
     store.set("cache_"+mode,{at:Date.now(),me,live});
   }catch(e){
     const c=store.get("cache_"+mode,null);
     if(c&&hav(c.me.lat,c.me.lon,me.lat,me.lon)<1500){live=c.live;toast("Offline – showing last saved results")}
     else toast("Couldn't reach live data. Showing your saved & added places.");
   }
+  clearTimeout(slow);
   places=live.concat(mine.filter(m=>modeOf(m)===mode).map(m=>({...m,mine:true,community:String(m.id)[0]==="c"})));
   render();
   loadCommunity();

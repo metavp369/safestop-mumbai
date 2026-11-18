@@ -29,6 +29,9 @@ Open the URL on your phone in Chrome, then Menu → *Add to Home screen*.
 
 HTTPS is required for GPS, which both hosts give you automatically.
 
+## Faster map data (shared cache)
+`api/places.js` asks OpenStreetMap's free Overpass servers on the app's behalf and caches each answer in the same Upstash Redis for 12 hours. Search centres are snapped to a ~500 m grid, so people searching the same neighbourhood share one cached answer and get results almost instantly. If our server can't help, the app asks the public servers directly (trying a second one after 8 s).
+
 ## Shared community data
 Ratings, reports (closed / dirty / unsafe / felt safe…) and places added by users are shared with everyone through `api/community.js`, a Vercel serverless function backed by **Upstash Redis** (Vercel → Storage → Upstash Redis, connected to this project).
 - Anonymous: each phone gets a random device ID; one vote per phone per place; only the phone that added a place can delete it
