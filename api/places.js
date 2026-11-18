@@ -19,6 +19,14 @@ const ENDPOINTS = [
   "https://overpass.kumi.systems/api/interpreter",
 ];
 const TTL = 12 * 3600;
+// overpass-api.de rejects (406) requests that don't identify themselves properly
+const HEADERS = {
+  "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
+  "User-Agent": "SafeStopMumbai/1.0 (public-safety web app; +https://safestop-mumbai.vercel.app; github.com/metavp369/safestop-mumbai)",
+  "Referer": "https://safestop-mumbai.vercel.app/",
+  "Accept": "application/json, text/plain, */*",
+  "Accept-Language": "en",
+};
 
 async function redis(cmds) {
   if (!URL_ || !TOKEN) return cmds.map(() => null);
@@ -42,7 +50,7 @@ function fromOverpass(q) {
     ENDPOINTS.forEach((ep) => {
       const ctl = new AbortController(); ctls.push(ctl);
       const to = setTimeout(() => ctl.abort(), 40000);
-      fetch(ep, { method: "POST", body: "data=" + encodeURIComponent(q), headers: { "Content-Type": "application/x-www-form-urlencoded", "User-Agent": "SafeStopMumbai/1.0 (+https://safestop-mumbai.vercel.app)" }, signal: ctl.signal })
+      fetch(ep, { method: "POST", body: "data=" + encodeURIComponent(q), headers: HEADERS, signal: ctl.signal })
         .then(async (r) => { clearTimeout(to); const t = await r.text(); if (!r.ok || !t.startsWith("{")) throw new Error("HTTP " + r.status); return t; })
         .then((t) => { if (!done) { done = true; ctls.forEach((c) => c !== ctl && c.abort()); resolve(t); } })
         .catch((e) => { if (++failed === ENDPOINTS.length && !done) reject(e); });
@@ -59,7 +67,7 @@ module.exports = async (req, res) => {
       const t = Date.now();
       try {
         const ctl = new AbortController(); const to = setTimeout(() => ctl.abort(), 20000);
-        const r = await fetch(ep, { method: "POST", body: "data=" + encodeURIComponent(q), headers: { "Content-Type": "application/x-www-form-urlencoded", "User-Agent": "SafeStopMumbai/1.0 (+https://safestop-mumbai.vercel.app)" }, signal: ctl.signal });
+        const r = await fetch(ep, { method: "POST", body: "data=" + encodeURIComponent(q), headers: HEADERS, signal: ctl.signal });
         clearTimeout(to); const txt = await r.text();
         out.servers.push({ ep, status: r.status, ms: Date.now() - t, ok: txt.startsWith("{"), sample: txt.slice(0, 120) });
       } catch (e) { out.servers.push({ ep, error: String(e.message || e), ms: Date.now() - t }); }
