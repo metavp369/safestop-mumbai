@@ -959,7 +959,7 @@ function setMe(lat,lon,label){
 }
 
 /* ---------- data: OpenStreetMap via Overpass ---------- */
-const ENDPOINTS=["https://overpass-api.de/api/interpreter","https://overpass.kumi.systems/api/interpreter","https://maps.mail.ru/osm/tools/overpass/api/interpreter"];
+const ENDPOINTS=["https://overpass-api.de/api/interpreter","https://overpass.private.coffee/api/interpreter","https://maps.mail.ru/osm/tools/overpass/api/interpreter","https://overpass.kumi.systems/api/interpreter"];
 async function overpassDirect(q){
   // ask the first server; if it hasn't answered in 8 s, also ask the next one, and use whichever answers first
   return new Promise((resolve,reject)=>{let done=false,fails=0,started=0;
@@ -971,16 +971,17 @@ async function overpassDirect(q){
     tryEp(0); setTimeout(()=>{if(!done&&started<2)tryEp(1)},8000);
   })}
 async function overpass(q){
-  // 1) shared 12-hour cache on our own server (fast for anyone after the first search in an area)
-  if(location.protocol.startsWith("http")){
-    try{const ctl=new AbortController();const to=setTimeout(()=>ctl.abort(),45000);
+  // Ask our cached server first; if it hasn't answered in 10 s (or fails), also ask the public servers
+  // directly from the phone, and use whichever answers first.
+  const viaApi=()=>new Promise(async(res,rej)=>{if(!location.protocol.startsWith("http"))return rej(new Error("no api"));
+    try{const ctl=new AbortController();const to=setTimeout(()=>ctl.abort(),50000);
       const r=await fetch("/api/places",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({q}),signal:ctl.signal});
-      clearTimeout(to); if(r.ok)return await r.json();
-    }catch(e){}
-  }
-  // 2) fall back to asking the public servers directly
-  return overpassDirect(q);
-}
+      clearTimeout(to); if(!r.ok)throw new Error("HTTP "+r.status); res(await r.json())}catch(e){rej(e)}});
+  return new Promise((resolve,reject)=>{let done=false,fails=0,started=1,directStarted=false;
+    const ok=j=>{if(!done){done=true;resolve(j)}}, bad=e=>{fails++;if(!directStarted)startDirect();else if(fails>=started&&!done){done=true;reject(e)}};
+    const startDirect=()=>{if(directStarted||done)return;directStarted=true;started++;overpassDirect(q).then(ok,bad)};
+    viaApi().then(ok,bad); setTimeout(startDirect,10000);
+  })}
 function normSafe(el){const tg=el.tags||{};const lat=el.lat??el.center?.lat, lon=el.lon??el.center?.lon;
   const a=tg.amenity||"";
   const type=a==="police"?"police":a==="hospital"?"hospital":a==="fuel"?"fuel":a==="pharmacy"?"pharmacy":tg.railway==="station"?"station":"shop";

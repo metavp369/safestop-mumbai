@@ -14,8 +14,9 @@ const URL_ = findEnv(["KV_REST_API_URL", "UPSTASH_REDIS_REST_URL"]);
 const TOKEN = findEnv(["KV_REST_API_TOKEN", "UPSTASH_REDIS_REST_TOKEN"]);
 const ENDPOINTS = [
   "https://overpass-api.de/api/interpreter",
-  "https://overpass.kumi.systems/api/interpreter",
+  "https://overpass.private.coffee/api/interpreter",
   "https://maps.mail.ru/osm/tools/overpass/api/interpreter",
+  "https://overpass.kumi.systems/api/interpreter",
 ];
 const TTL = 12 * 3600;
 
@@ -34,20 +35,19 @@ function allowed(q) {
     /^[\[\]\(\)\w:;"=~^|$.,\s\-!]+$/.test(q) && !/\b(out\s+(body|geom|meta|skel))\b/.test(q);
 }
 
-async function fromOverpass(q) {
-  let last;
-  for (const ep of ENDPOINTS) {
-    try {
-      const ctl = new AbortController(); const to = setTimeout(() => ctl.abort(), 25000);
-      const r = await fetch(ep, { method: "POST", body: "data=" + encodeURIComponent(q), headers: { "Content-Type": "application/x-www-form-urlencoded", "User-Agent": "SafeStopMumbai/1.0 (+https://safestop-mumbai.vercel.app)" }, signal: ctl.signal });
-      clearTimeout(to);
-      if (!r.ok) throw new Error("HTTP " + r.status);
-      const text = await r.text();
-      if (!text.startsWith("{")) throw new Error("bad response");
-      return text;
-    } catch (e) { last = e; }
-  }
-  throw last || new Error("unavailable");
+// Ask every server at once and use the first good answer (then cancel the rest).
+function fromOverpass(q) {
+  return new Promise((resolve, reject) => {
+    let done = false, failed = 0; const ctls = [];
+    ENDPOINTS.forEach((ep) => {
+      const ctl = new AbortController(); ctls.push(ctl);
+      const to = setTimeout(() => ctl.abort(), 40000);
+      fetch(ep, { method: "POST", body: "data=" + encodeURIComponent(q), headers: { "Content-Type": "application/x-www-form-urlencoded", "User-Agent": "SafeStopMumbai/1.0 (+https://safestop-mumbai.vercel.app)" }, signal: ctl.signal })
+        .then(async (r) => { clearTimeout(to); const t = await r.text(); if (!r.ok || !t.startsWith("{")) throw new Error("HTTP " + r.status); return t; })
+        .then((t) => { if (!done) { done = true; ctls.forEach((c) => c !== ctl && c.abort()); resolve(t); } })
+        .catch((e) => { if (++failed === ENDPOINTS.length && !done) reject(e); });
+    });
+  });
 }
 
 module.exports = async (req, res) => {
