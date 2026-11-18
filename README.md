@@ -25,7 +25,13 @@ Open the URL on your phone in Chrome, then Menu → *Add to Home screen*.
 
 HTTPS is required for GPS, which both hosts give you automatically.
 
+## Shared community data
+Ratings, reports (closed / dirty / unsafe / felt safe…) and places added by users are shared with everyone through `api/community.js`, a Vercel serverless function backed by **Upstash Redis** (Vercel → Storage → Upstash Redis, connected to this project).
+- Anonymous: each phone gets a random device ID; one vote per phone per place; only the phone that added a place can delete it
+- Places reported closed / wrong by 3+ people are hidden; bad reports push places down the list
+- Limits per IP per hour (15 adds, 300 votes); places must be inside the Mumbai region
+- If the database isn't connected, the app still works and keeps data on the phone
+
 ## Limits & next steps
-- Ratings, reports and added toilets are saved **on each phone only**. To share them across users, add a backend (Supabase/Firebase).
 - OSM coverage of Mumbai toilets is incomplete. Getting volunteers to map BMC/Sulabh toilets on OpenStreetMap improves the app for everyone.
 - Possible additions: an official BMC toilet dataset, photos, SMS fallback, women-safety ratings for lighting and attendants.
