@@ -4,21 +4,14 @@
 // 12 hours: the first person searching an area waits, everyone after gets it instantly.
 const crypto = require("crypto");
 
-function findEnv(suffixes) {
-  for (const k of suffixes) if (process.env[k]) return process.env[k];
-  for (const name of Object.keys(process.env))
-    for (const k of suffixes) if (name.endsWith("_" + k.split("_").slice(-3).join("_")) && process.env[name]) return process.env[name];
-  return "";
-}
-const URL_ = findEnv(["KV_REST_API_URL", "UPSTASH_REDIS_REST_URL"]);
-const TOKEN = findEnv(["KV_REST_API_TOKEN", "UPSTASH_REDIS_REST_TOKEN"]);
+const { redis: rawRedis, connected } = require("../lib/redis.js");
 const ENDPOINTS = [
   "https://overpass-api.de/api/interpreter",
   "https://overpass.private.coffee/api/interpreter",
   "https://maps.mail.ru/osm/tools/overpass/api/interpreter",
   "https://overpass.kumi.systems/api/interpreter",
 ];
-const TTL = 12 * 3600;
+const TTL = 3 * 24 * 3600; // map places change slowly; the nightly worker keeps busy areas fresh
 // overpass-api.de rejects (406) requests that don't identify themselves properly
 const HEADERS = {
   "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
@@ -28,14 +21,7 @@ const HEADERS = {
   "Accept-Language": "en",
 };
 
-async function redis(cmds) {
-  if (!URL_ || !TOKEN) return cmds.map(() => null);
-  try {
-    const r = await fetch(URL_ + "/pipeline", { method: "POST", headers: { Authorization: "Bearer " + TOKEN, "Content-Type": "application/json" }, body: JSON.stringify(cmds) });
-    if (!r.ok) return cmds.map(() => null);
-    return (await r.json()).map((x) => (x.error ? null : x.result));
-  } catch (e) { return cmds.map(() => null); }
-}
+async function redis(cmds) { if (!connected()) return cmds.map(() => null); try { return await rawRedis(cmds); } catch (e) { return cmds.map(() => null); } }
 
 // Only the kinds of queries the app itself makes: JSON output, "around" searches, read-only.
 function allowed(q) {
@@ -62,7 +48,7 @@ module.exports = async (req, res) => {
   // GET /api/places?health=1 – checks each public map server with a tiny fixed query (no user data)
   if (req.method === "GET" && req.query && req.query.health) {
     const q = '[out:json][timeout:20];nwr["amenity"="police"](around:1500,19.12,72.84);out center tags 5;';
-    const out = { cache: !!(URL_ && TOKEN), servers: [] };
+    const out = { cache: connected(), servers: [] };
     await Promise.all(ENDPOINTS.map(async (ep) => {
       const t = Date.now();
       try {
@@ -95,3 +81,6 @@ module.exports = async (req, res) => {
     return res.status(502).json({ error: "Map data server is busy" });
   }
 };
+module.exports.fromOverpass = fromOverpass;
+module.exports.cacheKey = (q) => "ovp:" + crypto.createHash("sha1").update(q).digest("hex");
+module.exports.TTL = TTL;

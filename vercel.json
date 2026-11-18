@@ -1,6 +1,10 @@
 {
   "regions": ["bom1"],
   "functions": {
-    "api/places.js": { "maxDuration": 60 }
-  }
+    "api/places.js": { "maxDuration": 60 },
+    "api/nightly.js": { "maxDuration": 60 }
+  },
+  "crons": [
+    { "path": "/api/nightly", "schedule": "30 21 * * *" }
+  ]
 }

@@ -756,6 +756,7 @@ label.f textarea{display:block;width:100%;font:inherit;padding:10px;border:1px s
 .drv-a{font-size:2em;font-weight:800;line-height:1.25;color:#111;margin-bottom:12px;word-wrap:break-word}.drv-l{font-size:1.3em;color:#422006;margin-bottom:14px}
 .clist .help a{font-size:.85em;padding:6px 10px}
 header h1{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;font-size:1.05em}header .hb{padding:6px 8px}
+.ropts{display:grid;gap:6px}.ropt{display:flex;justify-content:space-between;align-items:center;gap:8px;border:2px solid var(--line);border-radius:12px;padding:10px 12px;background:#fff;text-align:left;font-size:.9em}.ropt.on{border-color:#7e22ce;background:#faf5ff}.ropt span{color:var(--mut);font-size:.9em}
 </style>
 </head>
 <body>
@@ -902,8 +903,11 @@ const ratings=store.get("ratings",{}), reports=store.get("reports",{}), saved=st
 let device=store.get("device",null);
 if(!device){try{device=Array.from(crypto.getRandomValues(new Uint8Array(12)),b=>b.toString(36).padStart(2,"0")).join("").slice(0,20)}catch(e){device=(Math.random().toString(36)+Math.random().toString(36)).replace(/[^a-z0-9]/g,"").slice(0,20)}store.set("device",device)}
 const votes={}; let commOK=null;
+const nightNow=()=>{const h=new Date().getHours();return h>=19||h<6};
+const navMap={}; // directions link -> place id (to learn which places people actually go to)
+function placeName(id){const p=places.find(x=>x.id===id)||(typeof hazards!=="undefined"&&hazards.find(x=>x.id===id))||saved[id];return p?(p.name||((HZ[p.type]||[])[1])||""):""}
 async function api(action,data){const r=await fetch("/api/community",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action,device,...data})});const j=await r.json().catch(()=>({}));if(!r.ok)throw new Error(j.error||("HTTP "+r.status));return j}
-function sendVote(id){if(!/^[nwrc]/.test(String(id)))return;const v={...(reports[id]||{})};if(ratings[id])v.stars=ratings[id];api("vote",{id,vote:v}).then(j=>{votes[id]=j.votes;render()}).catch(()=>{})}
+function sendVote(id){if(!/^[nwrc]/.test(String(id)))return;const v={...(reports[id]||{})};if(ratings[id])v.stars=ratings[id];api("vote",{id,vote:v,h:new Date().getHours(),name:placeName(id)}).then(j=>{votes[id]=j.votes;render()}).catch(()=>{})}
 async function loadCommunity(){
   if(!me)return; const m=mode, at=me;
   if(m==="safe")loadHazards(at.lat,at.lon,2500).then(l=>{if(mode==="safe"&&me===at){hazards=l;render()}});
@@ -937,7 +941,8 @@ function hav(a,b,c,d){const R=6371e3,r=Math.PI/180,x=(c-a)*r,y=(d-b)*r,s=Math.si
 const fmtD=m=>m<1000?Math.round(m)+" m":(m/1000).toFixed(1)+" km";
 const walkMin=m=>Math.max(1,Math.round(m*1.3/75)); // street factor 1.3, ~75 m/min (slow walk)
 const esc=s=>String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
-const dirURL=p=>`https://www.google.com/maps/dir/?api=1&destination=${p.lat},${p.lon}&travelmode=walking`;
+const dirURL=p=>{const u=`https://www.google.com/maps/dir/?api=1&destination=${p.lat},${p.lon}&travelmode=walking`;if(p.id)navMap[u.replace(/&travelmode=\w+/,"")]=p.id;return u};
+document.addEventListener("click",e=>{const a=e.target.closest&&e.target.closest('a[href*="google.com/maps/dir"]');if(!a)return;const id=navMap[a.getAttribute("href").replace(/&travelmode=\w+/,"")];if(id&&/^[nwrc]/.test(id)&&typeof api==="function")api("nav",{id,h:new Date().getHours()}).catch(()=>{})},true);
 
 /* ---------- map ---------- */
 let tilesOK=false;
@@ -960,6 +965,14 @@ function setMe(lat,lon,label){
 
 /* ---------- data: OpenStreetMap via Overpass ---------- */
 const ENDPOINTS=["https://overpass-api.de/api/interpreter","https://overpass.private.coffee/api/interpreter","https://maps.mail.ru/osm/tools/overpass/api/interpreter","https://overpass.kumi.systems/api/interpreter"];
+function buildQuery(mode,lat,lon,backup){
+  const R=mode==="police"?5000:mode==="medical"?3000:mode==="safe"?2000:2500;
+  const a=`(around:${R+400},${(Math.round(lat*200)/200).toFixed(3)},${(Math.round(lon*200)/200).toFixed(3)})`;
+  return mode==="safe"?`[out:json][timeout:25];(nwr["amenity"~"^(police|hospital|fuel)$"]${a};nwr["amenity"="pharmacy"]["opening_hours"="24/7"]${a};nwr["railway"="station"]${a};nwr["shop"]["opening_hours"="24/7"]${a};nwr["amenity"~"^(cafe|fast_food|restaurant)$"]["opening_hours"="24/7"]${a};);out center tags 300;`
+   :mode==="medical"?`[out:json][timeout:25];(nwr["amenity"~"^(hospital|clinic|doctors|pharmacy)$"]${a};nwr["healthcare"~"^(hospital|clinic|doctor|pharmacy)$"]${a};nwr["shop"="chemist"]${a};);out center tags 300;`
+   :mode==="police"?`[out:json][timeout:25];(nwr["amenity"="police"]${a};);out center tags 200;`
+   :`[out:json][timeout:25];(nwr["amenity"="toilets"]${a};${backup?`nwr["amenity"="fuel"]${a};nwr["shop"="mall"]${a};nwr["railway"="station"]${a};`:""});out center tags 200;`;
+}
 async function overpassDirect(q){
   // ask the first server; if it hasn't answered in 8 s, also ask the next one, and use whichever answers first
   return new Promise((resolve,reject)=>{let done=false,fails=0,started=0;
@@ -1009,9 +1022,9 @@ function norm(el,backup){const tg=el.tags||{};const lat=el.lat??el.center?.lat, 
 async function load(){
   if(!me)return;
   const st=$("status"); st.textContent="Searching "+(mode==="safe"?"safe spots":mode==="police"?"police stations":mode==="medical"?"hospitals & medical stores":"toilets")+" near "+(me.label||"you")+"…";
-  const R=mode==="police"?5000:mode==="medical"?3000:mode==="safe"?2000:2500,a=`(around:${R+400},${(Math.round(me.lat*200)/200).toFixed(3)},${(Math.round(me.lon*200)/200).toFixed(3)})`;
+  const R=mode==="police"?5000:mode==="medical"?3000:mode==="safe"?2000:2500;
   const slow=setTimeout(()=>{if(st.textContent.startsWith("Searching"))st.textContent="Still searching… the free map data server is busy right now. Hang on a few more seconds. In an emergency, use SOS."},9000);
-  const q=mode==="safe"?`[out:json][timeout:25];(nwr["amenity"~"^(police|hospital|fuel)$"]${a};nwr["amenity"="pharmacy"]["opening_hours"="24/7"]${a};nwr["railway"="station"]${a};nwr["shop"]["opening_hours"="24/7"]${a};nwr["amenity"~"^(cafe|fast_food|restaurant)$"]["opening_hours"="24/7"]${a};);out center tags 300;`:mode==="medical"?`[out:json][timeout:25];(nwr["amenity"~"^(hospital|clinic|doctors|pharmacy)$"]${a};nwr["healthcare"~"^(hospital|clinic|doctor|pharmacy)$"]${a};nwr["shop"="chemist"]${a};);out center tags 300;`:mode==="police"?`[out:json][timeout:25];(nwr["amenity"="police"]${a};);out center tags 200;`:`[out:json][timeout:25];(nwr["amenity"="toilets"]${a};${filters.has("backup")?`nwr["amenity"="fuel"]${a};nwr["shop"="mall"]${a};nwr["railway"="station"]${a};`:""});out center tags 200;`;
+  const q=buildQuery(mode,me.lat,me.lon,filters.has("backup"));
   let live=[];
   try{const j=await overpass(q);
     live=mode==="safe"?j.elements.map(normSafe).filter(p=>p.lat):mode==="medical"?j.elements.map(normMed).filter(p=>p.lat):mode==="police"?j.elements.map(normPolice).filter(p=>p.lat):j.elements.map(el=>{const tg=el.tags||{};return norm(el,tg.amenity!=="toilets")}).filter(p=>p.lat&&p.access!=="private"&&p.access!=="no");
@@ -1050,9 +1063,15 @@ function matches(p){
 }
 function score(p){ // lower is better: distance with bonuses for profile needs & community rating
   return ownScore(p)*commFactor(p)}
-function commFactor(p){const hf=(p.kind==="safe"&&me&&pathNearHazard(me,p))?1.6:1;const a=votes[p.id];if(!a)return hf;const c=a.c||{};let f=1;
-  const bad=(c.closed||0)+(c.wrong||0)+(c.unsafe||0)+(c.dark||0)+(c.dirty||0)*.5+(c.nowater||0)*.5;
-  if(bad)f*=1+Math.min(bad,6)*.35; if(c.good)f*=Math.max(.7,1-c.good*.06); if(a.sn)f*=1.15-a.stars*.06; return f*hf}
+function commFactor(p){const hf=(p.kind==="safe"&&me&&pathNearHazard(me,p))?1.6:1;const a=votes[p.id];if(!a)return hf;let f=1;
+  const w=a.w||a.c||{}, night=nightNow();
+  const closedNow=night?((a.cn||{}).closed||0):((a.cd||{}).closed||0); // learned: closed at this time of day?
+  const bad=(w.closed||0)*0.5+closedNow*0.9+(w.wrong||0)+(w.unsafe||0)+(w.dark||0)*(night?1:0.4)+(w.dirty||0)*.5+(w.nowater||0)*.5;
+  if(bad)f*=1+Math.min(bad,6)*.35; if(w.good)f*=Math.max(.7,1-w.good*.06); if(a.sn)f*=1.15-a.stars*.06;
+  if((night?((a.cn||{}).closed||0):((a.cd||{}).closed||0))>=2)f*=4; // learned: usually closed at this time of day
+  const used=(a.nav||{})[night?"night":"day"]||0; if(used>=2&&bad<0.5)f*=Math.max(.8,1-used*.03); // people actually go here at this time
+  return f*hf}
+function learnedClosedNow(p){const a=votes[p.id];if(!a)return false;return nightNow()?((a.cn||{}).closed||0)>=2:((a.cd||{}).closed||0)>=2}
 function ownScore(p){
   let d=p.dist; const rep=reports[p.id]||{};
   if(p.kind==="medical"){if(rep.closed||rep.wrong)d*=3; return d}
@@ -1070,7 +1089,10 @@ function visible(){ if(!me)return Object.values(saved);
   const hidden=p=>p.community&&!p.mine&&((((votes[p.id]||{}).c||{}).wrong||0)+(((votes[p.id]||{}).c||{}).closed||0))>=3;
   return places.map(p=>({...p,dist:hav(me.lat,me.lon,p.lat,p.lon)})).filter(p=>matches(p)&&!hidden(p)).sort((a,b)=>score(a)-score(b)) }
 
-function commTags(p){const o=[];if(p.kind==="safe"&&me&&pathNearHazard(me,p))o.push(`<span class="tag r">⚠️ Unsafe spot reported on the way</span>`);if(p.community&&!p.mine)o.push(`<span class="tag b">👥 Added by SafeStop users</span>`);
+function commTags(p){const o=[];{const a=votes[p.id]||{},nv=a.nav||{};
+  if(learnedClosedNow(p))o.push(`<span class="tag r">${nightNow()?"🌙 Often closed at night":"☀️ Often closed in the daytime"} (${nightNow()?a.cn.closed:a.cd.closed} reports)</span>`);
+  if((nv.day||0)+(nv.night||0)>=3)o.push(`<span class="tag g">👣 ${(nv.day||0)+(nv.night||0)} people went here</span>`);
+  if(a.last&&Date.now()-a.last<7*864e5)o.push(`<span class="tag">🕑 Updated this week</span>`);}if(p.kind==="safe"&&me&&pathNearHazard(me,p))o.push(`<span class="tag r">⚠️ Unsafe spot reported on the way</span>`);if(p.community&&!p.mine)o.push(`<span class="tag b">👥 Added by SafeStop users</span>`);
   const a=votes[p.id];if(a){if(a.sn)o.push(`<span class="tag">★ ${a.stars} (${a.sn})</span>`);
     const L={good:["👍","felt safe"],closed:["👥","said closed"],dirty:["👥","said dirty"],nowater:["👥","said no water"],unsafe:["👥","felt unsafe"],wrong:["👥","said wrong place"],dark:["👥","said dark"]};
     for(const k in (a.c||{})){const l=L[k];if(l)o.push(`<span class="tag ${k==="good"?"g":"r"}">${l[0]} ${a.c[k]} ${l[1]}</span>`)}}
@@ -1167,7 +1189,7 @@ function openSafe(p){
 function emergencySafe(){
   const v=visible().filter(p=>{const r=reports[p.id]||{};return !r.closed&&!r.unsafe});
   // Prefer a place that is surely open at night (police, real hospital, confirmed 24 hrs) unless it's much further.
-  const sure=v.find(p=>staffed(p)||p.hours==="24/7");
+  const sure=v.find(p=>(staffed(p)||p.hours==="24/7")&&!learnedClosedNow(p));
   const best=sure&&v[0]&&sure.dist<=v[0].dist+600?sure:v[0], alts=v.filter(p=>p!==best).slice(0,2), staffedNear=v.find(staffed);
   sheet(`<h2>🌙 ${t("near_s")}</h2>
    <div class="grid2"><a class="btn red" href="tel:112">📞 Call 112</a><a class="btn call112" href="tel:1091">📞 1091 Women</a></div>
@@ -1358,7 +1380,10 @@ function distToSeg(p,a,b){ // metres from point p to segment a-b (all {lat,lon})
 /* ---------- unsafe-spot reports (shared) ---------- */
 const HZ={dark:["🌑","Dark lane / no lights"],streetlight:["💡","Broken streetlight"],harassment:["⚠️","Harassment reported"],deserted:["🚷","Deserted at night"],other:["❗","Feels unsafe"]};
 let hazards=[]; const hzCache={};
-const hzHidden=h=>{const c=(votes[h.id]||{}).c||{};return (c.fixed||0)>=2&&(c.fixed||0)>(c.confirm||0)};
+// Confidence fades with age (60-day half-life) and recovers when people confirm; "fixed" votes lower it.
+function hzConf(h){const w=((votes[h.id]||{}).w)||{};const age=(Date.now()-(h.at||Date.now()))/864e5;return Math.pow(.5,age/60)+(w.confirm||0)-1.3*(w.fixed||0)}
+const hzHidden=h=>hzConf(h)<0.15;
+const hzConfLabel=h=>{const c=hzConf(h);return c>=1.2?"high confidence":c>=0.5?"medium confidence":"old report – may be fixed"};
 async function loadHazards(lat,lon,r){
   const key=[lat.toFixed(3),lon.toFixed(3),r].join(",");
   if(hzCache[key]&&Date.now()-hzCache[key].at<120000)return hzCache[key].list;
@@ -1366,20 +1391,20 @@ async function loadHazards(lat,lon,r){
     const list=((await res.json()).places||[]).map(h=>({...h,kind:"hazard",community:true,mine:mine.some(x=>x.id===h.id)}));
     if(list.length){try{const v=await api("votes",{ids:list.map(h=>h.id)});Object.assign(votes,v.votes||{})}catch(e){}}
     hzCache[key]={at:Date.now(),list};return list}catch(e){return []}}
-function hzIcon(h){return L.divIcon({className:"",html:`<div class="hz">${(HZ[h.type]||HZ.other)[0]}</div>`,iconSize:[28,28],iconAnchor:[14,14]})}
+function hzIcon(h){return L.divIcon({className:"",html:`<div class="hz" style="opacity:${hzConf(h)<0.5?.5:1}">${(HZ[h.type]||HZ.other)[0]}</div>`,iconSize:[28,28],iconAnchor:[14,14]})}
 function ago(t){if(!t)return"";const d=(Date.now()-t)/86400000;return d<1?"today":d<2?"yesterday":d<30?Math.round(d)+" days ago":Math.round(d/30)+" months ago"}
 function drawHazards(target){(hazards||[]).filter(h=>!hzHidden(h)).forEach(h=>L.marker([h.lat,h.lon],{icon:hzIcon(h),zIndexOffset:-100}).on("click",()=>openHazard(h)).addTo(target||layer))}
 function pathNearHazard(a,b){return (hazards||[]).find(h=>!hzHidden(h)&&distToSeg(h,a,b)<80&&hav(h.lat,h.lon,b.lat,b.lon)>25)}
 function openHazard(h){
   const [ic,label]=HZ[h.type]||HZ.other, c=(votes[h.id]||{}).c||{}, r=reports[h.id]||{};
   sheet(`<h2>${ic} ${esc(label)}</h2>
-   <div class="meta">Reported ${ago(h.at)} · ${h.when==="always"?"day and night":"at night"}${me?` · ${fmtD(hav(me.lat,me.lon,h.lat,h.lon))} from you`:""}</div>
+   <div class="meta">Reported ${ago(h.at)} · ${h.when==="always"?"day and night":"at night"} · ${hzConfLabel(h)}${me?` · ${fmtD(hav(me.lat,me.lon,h.lat,h.lon))} from you`:""}</div>
    <div class="tags">${c.confirm?`<span class="tag r">👥 ${c.confirm} said still there</span>`:""}${c.fixed?`<span class="tag g">👥 ${c.fixed} said fixed</span>`:""}${h.mine?`<span class="tag b">Reported by you</span>`:""}</div>
    <div class="sec">Is it still like this?</div>
    <div class="rep"><button class="chip ${r.confirm?"on":""}" data-h="confirm">⚠️ Still there</button><button class="chip ${r.fixed?"on":""}" data-h="fixed">✅ Fixed / safe now</button></div>
    <div class="safe-note">Reports come from other SafeStop users and can't be checked. Use them as a warning and stay alert. To report a crime, call 112.</div>
    ${h.mine?`<button class="btn out" id="hDel" style="color:var(--red)">Delete my report</button>`:""}`);
-  $("sheetBox").querySelectorAll("[data-h]").forEach(b=>b.onclick=()=>{const k=b.dataset.h,o=k==="confirm"?"fixed":"confirm";reports[h.id]=reports[h.id]||{};reports[h.id][k]=!reports[h.id][k];if(reports[h.id][k])reports[h.id][o]=false;store.set("reports",reports);openHazard(h);const v={...reports[h.id]};api("vote",{id:h.id,vote:v}).then(j=>{votes[h.id]=j.votes;if($("sheet").classList.contains("show")&&$("sheetBox").querySelector("[data-h]"))openHazard(h);render()}).catch(()=>{})});
+  $("sheetBox").querySelectorAll("[data-h]").forEach(b=>b.onclick=()=>{const k=b.dataset.h,o=k==="confirm"?"fixed":"confirm";reports[h.id]=reports[h.id]||{};reports[h.id][k]=!reports[h.id][k];if(reports[h.id][k])reports[h.id][o]=false;store.set("reports",reports);openHazard(h);const v={...reports[h.id]};api("vote",{id:h.id,vote:v,h:new Date().getHours(),name:(HZ[h.type]||HZ.other)[1]}).then(j=>{votes[h.id]=j.votes;if($("sheet").classList.contains("show")&&$("sheetBox").querySelector("[data-h]"))openHazard(h);render()}).catch(()=>{})});
   if(h.mine)$("hDel").onclick=()=>{api("delete",{id:h.id}).catch(()=>{});const i=mine.findIndex(m=>m.id===h.id);if(i>-1)mine.splice(i,1);store.set("mine",mine);hazards=hazards.filter(x=>x.id!==h.id);Object.keys(hzCache).forEach(k=>delete hzCache[k]);$("sheet").classList.remove("show");render();toast("Report deleted")};
 }
 function reportHazard(){
@@ -1506,66 +1531,93 @@ async function searchPlace(q){
     out.querySelectorAll(".item").forEach(el=>el.onclick=()=>{const x=j[+el.dataset.i];setEnd("to",{lat:+x.lat,lon:+x.lon,label:x.display_name.split(",").slice(0,2).join(",")});out.innerHTML=""});
   }catch(e){out.innerHTML=`<div class="meta">Search isn't available here. Pick the place on the map instead.</div>`}
 }
-async function getWalkRoute(a,b){
+async function getWalkRoutes(a,b){
+  // ask for up to 3 alternative walking routes
   try{const ctl=new AbortController();const to=setTimeout(()=>ctl.abort(),12000);
-    const r=await fetch(`https://routing.openstreetmap.de/routed-foot/route/v1/foot/${a.lon},${a.lat};${b.lon},${b.lat}?overview=full&geometries=geojson`,{signal:ctl.signal});clearTimeout(to);
-    const j=await r.json();const rt=j.routes&&j.routes[0];if(!rt)throw 0;
-    return {pts:rt.geometry.coordinates.map(([lon,lat])=>({lat,lon})),dist:rt.distance,dur:rt.duration,real:true}}
-  catch(e){const d=hav(a.lat,a.lon,b.lat,b.lon);return {pts:[a,b],dist:d*1.3,dur:d*1.3/1.25,real:false}}
+    const r=await fetch(`https://routing.openstreetmap.de/routed-foot/route/v1/foot/${a.lon},${a.lat};${b.lon},${b.lat}?overview=full&geometries=geojson&alternatives=3`,{signal:ctl.signal});clearTimeout(to);
+    const j=await r.json();if(!j.routes||!j.routes.length)throw 0;
+    return j.routes.slice(0,3).map(rt=>({pts:rt.geometry.coordinates.map(([lon,lat])=>({lat,lon})),dist:rt.distance,dur:rt.duration,real:true}))}
+  catch(e){const d=hav(a.lat,a.lon,b.lat,b.lon);return [{pts:[a,b],dist:d*1.3,dur:d*1.3/1.25,real:false}]}
 }
 function along(pts){const cum=[0];for(let i=1;i<pts.length;i++)cum[i]=cum[i-1]+hav(pts[i-1].lat,pts[i-1].lon,pts[i].lat,pts[i].lon);return cum}
 function nearestOnRoute(p,pts,cum){let best=1e9,at=0;for(let i=0;i<pts.length-1;i++){const a=pts[i],b=pts[i+1];const [px,py]=toXY(p.lat,p.lon,a.lat,a.lon),[bx,by]=toXY(b.lat,b.lon,a.lat,a.lon);const L2=bx*bx+by*by;let t=L2?(px*bx+py*by)/L2:0;t=Math.max(0,Math.min(1,t));const d=Math.hypot(px-t*bx,py-t*by);if(d<best){best=d;at=cum[i]+t*(cum[i+1]-cum[i])}}return {off:best,at}}
-async function showRoute(){
-  if(!routeFrom||!routeTo){toast("Choose both From and To");return}
-  const out=$("rOut");out.innerHTML=`<div class="status">Finding the walking route and safe places along it…</div>`;
-  const R=await getWalkRoute(routeFrom,routeTo);
-  if(R.dist>15000){out.innerHTML=`<div class="empty">That's over 15 km – too long to check as a walk. Try a shorter route.</div>`;return}
-  // simplify polyline for the map-data query
-  const step=Math.max(1,Math.ceil(R.pts.length/60)); let sp=R.pts.filter((_,i)=>i%step===0); if(sp[sp.length-1]!==R.pts[R.pts.length-1])sp.push(R.pts[R.pts.length-1]);
-  if(sp.length===2){const a=sp[0],b=sp[1],n=Math.min(30,Math.ceil(R.dist/150));sp=Array.from({length:n+1},(_,i)=>({lat:a.lat+(b.lat-a.lat)*i/n,lon:a.lon+(b.lon-a.lon)*i/n}))}
-  const line=sp.map(p=>`${p.lat.toFixed(5)},${p.lon.toFixed(5)}`).join(",");
-  let found=[];
-  try{const j=await overpass(`[out:json][timeout:25];(nwr["amenity"~"^(police|hospital|clinic|doctors|pharmacy|fuel|toilets)$"](around:150,${line});nwr["shop"]["opening_hours"="24/7"](around:150,${line}););out center tags 300;`);
-    found=j.elements.map(el=>{const tg=el.tags||{};const a=tg.amenity;const k=a==="doctors"?"clinic":a&&RT[a]?a:"shop";return {id:el.type[0]+el.id,lat:el.lat??el.center?.lat,lon:el.lon??el.center?.lon,k,name:tg.name||RT[k][1],phone:tg.phone||tg["contact:phone"]||"",hours:tg.opening_hours||""}}).filter(p=>p.lat)}
-  catch(e){toast("Couldn't load map data for the route")}
-  const cum=along(R.pts), total=cum[cum.length-1]||R.dist;
-  found.forEach(p=>{const n=nearestOnRoute(p,R.pts,cum);p.off=n.off;p.pos=n.at});
-  found=found.filter(p=>p.off<=170).sort((a,b)=>a.pos-b.pos);
-  const mid=R.pts[Math.floor(R.pts.length/2)];
-  const hz=(await loadHazards(mid.lat,mid.lon,Math.min(6000,Math.round(total/2+600)))).filter(h=>!hzHidden(h));
-  const hzOn=hz.map(h=>{const n=nearestOnRoute(h,R.pts,cum);return {...h,off:n.off,pos:n.at}}).filter(h=>h.off<=120).sort((a,b)=>a.pos-b.pos);
-  hzOn.forEach(h=>{if(!hazards.find(x=>x.id===h.id))hazards.push(h)});
-  // longest stretch without a safe place (toilets don't count)
+function simplify(pts,max){const step=Math.max(1,Math.ceil(pts.length/max));let sp=pts.filter((_,i)=>i%step===0);if(sp[sp.length-1]!==pts[pts.length-1])sp.push(pts[pts.length-1]);
+  if(sp.length===2){const a=sp[0],b=sp[1],d=hav(a.lat,a.lon,b.lat,b.lon),n=Math.min(30,Math.max(1,Math.ceil(d/150)));sp=Array.from({length:n+1},(_,i)=>({lat:a.lat+(b.lat-a.lat)*i/n,lon:a.lon+(b.lon-a.lon)*i/n}))}return sp}
+// Score one route: shorter is better, but unsafe-spot reports, long stretches with no safe place,
+// and few police/hospitals along the way all make it worse. Night-only reports count fully only at night.
+function evalRoute(R,allPlaces,allHz){
+  const cum=along(R.pts),total=cum[cum.length-1]||R.dist;
+  const found=allPlaces.map(p=>{const n=nearestOnRoute(p,R.pts,cum);return {...p,off:n.off,pos:n.at}}).filter(p=>p.off<=170).sort((a,b)=>a.pos-b.pos);
+  const hzOn=allHz.map(h=>{const n=nearestOnRoute(h,R.pts,cum);return {...h,off:n.off,pos:n.at}}).filter(h=>h.off<=120).sort((a,b)=>a.pos-b.pos);
   const marks=[0,...found.filter(p=>p.k!=="toilets").map(p=>p.pos),total].sort((a,b)=>a-b);
   let gap=0,gs=0;for(let i=1;i<marks.length;i++)if(marks[i]-marks[i-1]>gap){gap=marks[i]-marks[i-1];gs=marks[i-1]}
-  routeData={R,found,hzOn,total,gap,gs};
-  // draw
+  const night=nightNow();
+  const hzW=hzOn.reduce((s,h)=>s+Math.max(0,hzConf(h))*(h.when==="night"&&!night?0.4:1)*(h.type==="harassment"?1.4:1),0);
+  const strong=found.filter(p=>p.k==="police"||p.k==="hospital").length, other=found.filter(p=>!["police","hospital","toilets"].includes(p.k)).length;
+  const cost=total+450*hzW+Math.max(0,gap-400)*(night?0.9:0.5)-60*Math.min(strong,3)-25*Math.min(other,6);
+  return {R,found,hzOn,total,gap,gs,strong,other,cost,hzW};
+}
+async function showRoute(){
+  if(!routeFrom||!routeTo){toast("Choose both From and To");return}
+  const out=$("rOut");out.innerHTML=`<div class="status">Finding walking routes and checking each one for safety…</div>`;
+  const routes=await getWalkRoutes(routeFrom,routeTo);
+  if(routes[0].dist>15000){out.innerHTML=`<div class="empty">That's over 15 km – too long to check as a walk. Try a shorter route.</div>`;return}
+  // one map-data query covering all alternatives
+  const pts=routes.flatMap(R=>simplify(R.pts,Math.floor(90/routes.length)));
+  const line=pts.map(p=>`${p.lat.toFixed(5)},${p.lon.toFixed(5)}`).join(",");
+  let placesFound=[];
+  try{const j=await overpass(`[out:json][timeout:25];(nwr["amenity"~"^(police|hospital|clinic|doctors|pharmacy|fuel|toilets)$"](around:150,${line});nwr["shop"]["opening_hours"="24/7"](around:150,${line}););out center tags 300;`);
+    placesFound=j.elements.map(el=>{const tg=el.tags||{};const a=tg.amenity;const k=a==="doctors"?"clinic":a&&RT[a]?a:"shop";return {id:el.type[0]+el.id,lat:el.lat??el.center?.lat,lon:el.lon??el.center?.lon,k,name:tg.name||RT[k][1],phone:tg.phone||tg["contact:phone"]||"",hours:tg.opening_hours||""}}).filter(p=>p.lat)}
+  catch(e){toast("Couldn't load map data for the route")}
+  const mid=routes[0].pts[Math.floor(routes[0].pts.length/2)];
+  const hz=(await loadHazards(mid.lat,mid.lon,Math.min(6000,Math.round(routes[0].dist/2+800)))).filter(h=>!hzHidden(h));
+  hz.forEach(h=>{if(!hazards.find(x=>x.id===h.id))hazards.push(h)});
+  const evals=routes.map(R=>evalRoute(R,placesFound,hz));
+  const shortest=evals.reduce((a,b)=>b.total<a.total?b:a), safest=evals.reduce((a,b)=>b.cost<a.cost?b:a);
+  routeData={evals,shortest,safest,sel:safest};
+  drawRouteChoice();
+}
+function routeWhy(e,base){
+  const r=[];
+  if(e.hzOn.length<base.hzOn.length)r.push(`avoids ${base.hzOn.length-e.hzOn.length} unsafe spot${base.hzOn.length-e.hzOn.length>1?"s":""}`);
+  if(e.strong>base.strong)r.push(`passes ${e.strong} police / hospital${e.strong>1?"s":""}`);
+  if(e.gap+150<base.gap)r.push(`longest lonely stretch ${fmtD(e.gap)} (vs ${fmtD(base.gap)})`);
+  if(e.other>base.other+1)r.push(`more open places along the way`);
+  return r.join(" · ");
+}
+function drawRouteChoice(){
+  const D=routeData, e=D.sel, out=$("rOut");
   if(routeLayer)routeLayer.remove(); routeLayer=L.layerGroup().addTo(map);
-  const poly=L.polyline(R.pts.map(p=>[p.lat,p.lon]),{color:"#7e22ce",weight:5,opacity:.85,dashArray:R.real?null:"8 8"}).addTo(routeLayer);
+  D.evals.filter(x=>x!==e).forEach(x=>L.polyline(x.R.pts.map(p=>[p.lat,p.lon]),{color:"#94a3b8",weight:4,opacity:.7,dashArray:"6 6"}).on("click",()=>{D.sel=x;drawRouteChoice()}).addTo(routeLayer));
+  const poly=L.polyline(e.R.pts.map(p=>[p.lat,p.lon]),{color:"#7e22ce",weight:6,opacity:.9,dashArray:e.R.real?null:"8 8"}).addTo(routeLayer);
   L.marker([routeFrom.lat,routeFrom.lon],{icon:L.divIcon({className:"",html:'<div class="pin" style="background:#0f766e"><span>A</span></div>',iconSize:[30,30],iconAnchor:[15,30]})}).addTo(routeLayer);
   L.marker([routeTo.lat,routeTo.lon],{icon:L.divIcon({className:"",html:'<div class="pin" style="background:#7e22ce"><span>B</span></div>',iconSize:[30,30],iconAnchor:[15,30]})}).addTo(routeLayer);
-  found.forEach(p=>L.marker([p.lat,p.lon],{icon:L.divIcon({className:"",html:`<div class="pin" style="background:${p.k==="police"?"#1d4ed8":p.k==="hospital"?"#b91c1c":"#15803d"}"><span>${RT[p.k][0]}</span></div>`,iconSize:[26,26],iconAnchor:[13,26]})}).on("click",()=>routePlace(p)).addTo(routeLayer));
-  hzOn.forEach(h=>L.marker([h.lat,h.lon],{icon:hzIcon(h)}).on("click",()=>openHazard(h)).addTo(routeLayer));
-  try{map.fitBounds(poly.getBounds(),{padding:[30,30]})}catch(e){}
-  // summary
-  const cnt=k=>found.filter(p=>p.k===k).length;
+  e.found.forEach(p=>L.marker([p.lat,p.lon],{icon:L.divIcon({className:"",html:`<div class="pin" style="background:${p.k==="police"?"#1d4ed8":p.k==="hospital"?"#b91c1c":"#15803d"}"><span>${RT[p.k][0]}</span></div>`,iconSize:[26,26],iconAnchor:[13,26]})}).on("click",()=>routePlace(p)).addTo(routeLayer));
+  e.hzOn.forEach(h=>L.marker([h.lat,h.lon],{icon:hzIcon(h)}).on("click",()=>openHazard(h)).addTo(routeLayer));
+  try{map.fitBounds(poly.getBounds(),{padding:[30,30]})}catch(x){}
+  const cnt=k=>e.found.filter(p=>p.k===k).length;
   const sum=Object.keys(RT).filter(k=>cnt(k)).map(k=>`${RT[k][0]} ${cnt(k)} ${RT[k][1].toLowerCase()}${cnt(k)>1&&!/s$/.test(RT[k][1])?"s":""}`).join(" · ");
-  const gmaps=`https://www.google.com/maps/dir/?api=1&origin=${routeFrom.lat},${routeFrom.lon}&destination=${routeTo.lat},${routeTo.lon}&travelmode=walking`;
-  out.innerHTML=`<div class="big-card" style="border-color:#7e22ce;margin-top:12px">
-    <div><b>${fmtD(total)}</b> · about ${Math.max(1,Math.round(total*1.0/70))} min walk${R.real?"":" <span class='meta'>(approximate – straight line)</span>"}</div>
+  // Make Google Maps follow the chosen path by passing two points along it as waypoints
+  const wp=e.R.real&&D.evals.length>1?[1/3,2/3].map(f=>e.R.pts[Math.floor((e.R.pts.length-1)*f)]).map(p=>`${p.lat.toFixed(5)},${p.lon.toFixed(5)}`).join("|"):"";
+  const gmaps=`https://www.google.com/maps/dir/?api=1&origin=${routeFrom.lat},${routeFrom.lon}&destination=${routeTo.lat},${routeTo.lon}&travelmode=walking${wp?`&waypoints=${encodeURIComponent(wp)}`:""}`;
+  const opts=D.evals.length>1?`<div class="sec">${D.evals.length} routes compared${nightNow()?" · 🌙 night-time safety rules":""}</div><div class="ropts">${D.evals.map((x,i)=>`<button class="ropt ${x===e?"on":""}" data-ri="${i}"><b>${x===D.safest?"🛡️ Safest":x===D.shortest?"⚡ Shortest":"Route "+(i+1)}</b><span>${fmtD(x.total)} · ${x.hzOn.length?`⚠️ ${x.hzOn.length}`:"✅ 0 warnings"} · ${x.strong+x.other} safe places</span></button>`).join("")}</div>
+     ${D.safest!==D.shortest?`<div class="safe-note">🛡️ <b>Recommended:</b> the safer route is ${fmtD(D.safest.total-D.shortest.total)} longer but ${routeWhy(D.safest,D.shortest)||"has better cover along the way"}.</div>`:`<div class="safe-note">🛡️ The shortest route is also the safest of the ${D.evals.length}.</div>`}`:"";
+  out.innerHTML=`${opts}<div class="big-card" style="border-color:#7e22ce;margin-top:12px">
+    <div><b>${fmtD(e.total)}</b> · about ${Math.max(1,Math.round(e.total/70))} min walk${e.R.real?"":" <span class='meta'>(approximate – straight line)</span>"}</div>
     <div class="meta" style="margin-top:4px">${sum||"No safe places found within 150 m of this route."}</div>
-    ${hzOn.length?`<div class="tag r" style="display:inline-block;margin-top:8px">⚠️ ${hzOn.length} unsafe spot${hzOn.length>1?"s":""} reported on this route</div>`:`<div class="tag g" style="display:inline-block;margin-top:8px">✅ No unsafe spots reported on this route</div>`}
-    ${gap>600?`<div class="safe-note">Longest stretch with no safe place: <b>${fmtD(gap)}</b> (from ${fmtD(gs)} to ${fmtD(gs+gap)}). Take extra care there, especially after dark.</div>`:""}
-    <a class="btn pri" href="${gmaps}" target="_blank" rel="noopener">🧭 Open walking directions</a>
+    ${e.hzOn.length?`<div class="tag r" style="display:inline-block;margin-top:8px">⚠️ ${e.hzOn.length} unsafe spot${e.hzOn.length>1?"s":""} reported on this route</div>`:`<div class="tag g" style="display:inline-block;margin-top:8px">✅ No unsafe spots reported on this route</div>`}
+    ${e.gap>600?`<div class="safe-note">Longest stretch with no safe place: <b>${fmtD(e.gap)}</b> (from ${fmtD(e.gs)} to ${fmtD(e.gs+e.gap)}). Take extra care there, especially after dark.</div>`:""}
+    <a class="btn pri" href="${gmaps}" target="_blank" rel="noopener">🧭 Walk this route in Google Maps</a>
     <div class="grid2"><button class="btn out sm" id="rSave">⭐ Save route</button><button class="btn out sm" id="rShare">📤 Share route</button></div>
     <button class="btn out sm" id="rClear">✕ Clear route from map</button>
-    <div class="meta" style="margin-top:6px">Google Maps may suggest a slightly different path. If it does, check it against the warnings here.</div></div>
-   ${hzOn.length||found.length?`<div class="sec">Along the way</div>`:""}
-   ${[...found.map(p=>({...p,t:"p"})),...hzOn.map(h=>({...h,t:"h"}))].sort((a,b)=>a.pos-b.pos).map((p,i)=>p.t==="h"
-     ?`<div class="item hzitem" data-hz="${p.id}"><div class="ic" style="background:#fef2f2">${(HZ[p.type]||HZ.other)[0]}</div><div style="flex:1"><h3>${esc((HZ[p.type]||HZ.other)[1])}</h3><div class="meta">Reported ${ago(p.at)}</div></div><div class="dist" style="color:var(--red)">at ${fmtD(p.pos)}</div></div>`
+    <div class="meta" style="margin-top:6px">${wp?"Google Maps is asked to follow this exact path. Check that it matches the purple line.":"Google Maps may suggest a slightly different path. If it does, check it against the warnings here."}</div></div>
+   ${e.hzOn.length||e.found.length?`<div class="sec">Along the way</div>`:""}
+   ${[...e.found.map(p=>({...p,t:"p"})),...e.hzOn.map(h=>({...h,t:"h"}))].sort((a,b)=>a.pos-b.pos).map(p=>p.t==="h"
+     ?`<div class="item hzitem" data-hz="${p.id}"><div class="ic" style="background:#fef2f2">${(HZ[p.type]||HZ.other)[0]}</div><div style="flex:1"><h3>${esc((HZ[p.type]||HZ.other)[1])}</h3><div class="meta">Reported ${ago(p.at)} · ${hzConfLabel(p)}</div></div><div class="dist" style="color:var(--red)">at ${fmtD(p.pos)}</div></div>`
      :`<div class="item" data-rp="${p.id}"><div class="ic">${RT[p.k][0]}</div><div style="flex:1;min-width:0"><h3>${esc(p.name)}</h3><div class="meta">${RT[p.k][1]}${p.hours==="24/7"?" · 24 hrs":""}${p.phone?" · 📞":""}</div></div><div class="dist">at ${fmtD(p.pos)}</div></div>`).join("")}`;
-  out.querySelectorAll("[data-rp]").forEach(el=>el.onclick=()=>routePlace(found.find(p=>p.id===el.dataset.rp)));
-  out.querySelectorAll("[data-hz]").forEach(el=>el.onclick=()=>openHazard(hzOn.find(h=>h.id===el.dataset.hz)));
+  out.querySelectorAll("[data-ri]").forEach(b=>b.onclick=()=>{D.sel=D.evals[+b.dataset.ri];drawRouteChoice()});
+  out.querySelectorAll("[data-rp]").forEach(el=>el.onclick=()=>routePlace(e.found.find(p=>p.id===el.dataset.rp)));
+  out.querySelectorAll("[data-hz]").forEach(el=>el.onclick=()=>openHazard(e.hzOn.find(h=>h.id===el.dataset.hz)));
   $("rClear").onclick=()=>{if(routeLayer){routeLayer.remove();routeLayer=null}out.innerHTML="";routeData=null};
   $("rShare").onclick=()=>copy(`Walking route ${routeFrom.label||""} → ${routeTo.label||""}: ${gmaps}`);
   $("rSave").onclick=()=>{sheet(`<h2>⭐ Save this route</h2><label class="f">Name<input id="rName" maxlength="40" placeholder="e.g. Riya's walk to school"></label><button class="btn pri" id="rNameOk">Save</button>`);
@@ -1579,6 +1631,7 @@ function routePlace(p){if(!p)return;sheet(`<h2>${RT[p.k][0]} ${esc(p.name)}</h2>
   // Me tab: home + contacts above the help tips
   $("p-info").insertAdjacentHTML("afterbegin",`<div class="sec" style="margin-top:4px">🏠 Home</div><div id="meHome"></div>
    <div class="sec">📞 Emergency contacts</div><div class="meta">Shown on every SOS screen so you can alert them in one tap. Saved only on this phone.</div><div id="meContacts"></div>
+   <div class="sec">📊 Community safety report</div><div class="meta">Updated every night: where toilets are scarce, where people reported unsafe spots, and places often found closed. Share it with BMC, the police or local groups.</div><a class="btn out" href="/report.html" target="_blank" rel="noopener">📊 Open community report</a>
    <div class="sec">ℹ️ Help</div>`);
   renderHomeBox(); renderContacts();
   $("homeBtn").onclick=openHome;

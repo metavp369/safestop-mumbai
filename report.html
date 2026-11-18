@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SafeStop Mumbai – Community Safety Report</title>
+<meta name="theme-color" content="#0f766e">
+<style>
+:root{--teal:#0f766e;--ink:#0f172a;--mut:#64748b;--line:#e2e8f0;--red:#dc2626;--bg:#f8fafc}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font:16px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,"Noto Sans Devanagari",sans-serif;color:var(--ink);background:var(--bg)}
+header{background:var(--teal);color:#fff;padding:22px 18px}
+header h1{font-size:1.4em}header p{opacity:.9;font-size:.92em;margin-top:4px}
+main{max-width:980px;margin:0 auto;padding:16px}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:18px}
+.card{background:#fff;border:1px solid var(--line);border-radius:14px;padding:14px}
+.card b{display:block;font-size:1.7em;color:var(--teal)}.card span{color:var(--mut);font-size:.85em}
+h2{font-size:1.1em;margin:22px 0 8px}
+.note{color:var(--mut);font-size:.88em;margin-bottom:8px}
+table{width:100%;border-collapse:collapse;background:#fff;border:1px solid var(--line);border-radius:14px;overflow:hidden;font-size:.92em}
+th,td{text-align:left;padding:9px 10px;border-bottom:1px solid var(--line)}th{background:#f1f5f9;font-size:.85em;color:#334155}
+td.num{text-align:right;font-variant-numeric:tabular-nums}
+.bar{height:8px;border-radius:4px;background:#e2e8f0;min-width:60px}.bar i{display:block;height:100%;border-radius:4px;background:var(--teal)}
+.bad{color:var(--red);font-weight:600}.ok{color:#15803d}
+.empty{background:#fff;border:1px dashed var(--line);border-radius:14px;padding:16px;color:var(--mut)}
+footer{max-width:980px;margin:0 auto;padding:16px 16px 40px;color:var(--mut);font-size:.82em}
+a{color:var(--teal)}
+.btn{display:inline-block;margin-top:10px;background:#fff;color:var(--teal);border-radius:10px;padding:8px 14px;font-weight:600;text-decoration:none;border:0;cursor:pointer;font:inherit}
+</style>
+</head>
+<body>
+<header>
+  <h1>🚻 SafeStop Mumbai – Community Safety Report</h1>
+  <p id="sub">Loading…</p>
+  <button class="btn" id="copy">📋 Copy link to share</button> <a class="btn" href="/">Open the app</a>
+</header>
+<main id="main"><div class="empty">Loading the latest report…</div></main>
+<footer>
+  How this works: every night at about 3 am the SafeStop server counts public toilets on OpenStreetMap near 20 busy areas, plus the unsafe spots and closed places reported by SafeStop users. Map data is only as complete as OpenStreetMap; reports come from anonymous users and are not verified. Use this to spot gaps and patterns – for example to request toilets or streetlights from BMC – not as proof of a specific incident.
+</footer>
+<script>
+const esc=s=>String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const HZ={dark:"🌑 dark lane",streetlight:"💡 broken streetlight",harassment:"⚠️ harassment",deserted:"🚷 deserted",other:"❗ feels unsafe"};
+document.getElementById("copy").onclick=async e=>{try{await navigator.clipboard.writeText(location.href);e.target.textContent="✓ Link copied"}catch(x){e.target.textContent=location.href}};
+(async()=>{
+  const main=document.getElementById("main"),sub=document.getElementById("sub");
+  let r;
+  try{const res=await fetch("/api/report");if(!res.ok)throw new Error((await res.json().catch(()=>({}))).error||res.status);r=await res.json()}
+  catch(e){sub.textContent="Report not available yet";main.innerHTML=`<div class="empty">The first report is created by the nightly worker (around 3 am). ${esc(e.message||"")}</div>`;return}
+  const d=new Date(r.generatedAt);
+  sub.textContent=`Updated ${d.toLocaleString("en-IN",{dateStyle:"medium",timeStyle:"short"})} · 20 busy areas of Mumbai`;
+  const A=r.areas||[], withT=A.filter(a=>a.toilets!=null);
+  const tot=r.communityTotals||{};
+  const maxT=Math.max(1,...withT.map(a=>a.toilets));
+  const fewest=[...withT].sort((a,b)=>a.toilets-b.toilets);
+  const unsafe=[...A].filter(a=>a.unsafeReports90d>0).sort((a,b)=>b.unsafeReports90d-a.unsafeReports90d);
+  main.innerHTML=`
+  <div class="cards">
+    <div class="card"><b>${withT.reduce((s,a)=>s+a.toilets,0)}</b><span>public toilets mapped within 1 km of the ${withT.length} area centres checked</span></div>
+    <div class="card"><b>${withT.reduce((s,a)=>s+a.womenToilets,0)}</b><span>of them marked usable by women</span></div>
+    <div class="card"><b>${(tot.toilet||0)+(tot.police||0)+(tot.medical||0)+(tot.safe||0)}</b><span>places added by SafeStop users</span></div>
+    <div class="card"><b>${tot.hazard||0}</b><span>active unsafe-spot reports</span></div>
+  </div>
+  <h2>🚻 Where public toilets are scarce</h2>
+  <p class="note">Public toilets on OpenStreetMap within 1 km of each area's centre, fewest first. Areas the nightly worker hasn't loaded yet are left out.</p>
+  ${fewest.length?`<table><tr><th>Area</th><th class="num">Toilets</th><th class="num">Women</th><th class="num">Free</th><th style="width:30%"></th></tr>
+   ${fewest.map(a=>`<tr><td>${esc(a.name)}${a.communityToilets?` <span class="note">(+${a.communityToilets} added by users)</span>`:""}</td><td class="num ${a.toilets<3?"bad":""}">${a.toilets}</td><td class="num ${a.womenToilets===0?"bad":""}">${a.womenToilets}</td><td class="num">${a.freeToilets}</td><td><div class="bar"><i style="width:${Math.round(a.toilets/maxT*100)}%"></i></div></td></tr>`).join("")}</table>`
+   :`<div class="empty">No area data yet – it fills in over the first few nights.</div>`}
+  <h2>⚠️ Unsafe-spot reports by area (last 90 days)</h2>
+  <p class="note">Reports from SafeStop users within 2 km of each area's centre.</p>
+  ${unsafe.length?`<table><tr><th>Area</th><th class="num">Reports</th><th>Most common</th></tr>${unsafe.map(a=>`<tr><td>${esc(a.name)}</td><td class="num bad">${a.unsafeReports90d}</td><td>${Object.entries(a.unsafeTypes||{}).sort((x,y)=>y[1]-x[1]).map(([k,n])=>`${HZ[k]||k} (${n})`).join(", ")}</td></tr>`).join("")}</table>`
+   :`<div class="empty ok">No unsafe spots reported near these areas yet.</div>`}
+  <h2>🔒 Places most often found closed (last 2 months)</h2>
+  ${(r.oftenClosed||[]).length?`<table><tr><th>Place</th><th class="num">Reports</th></tr>${r.oftenClosed.map(p=>`<tr><td>${esc(p.name)}</td><td class="num">${p.reports}</td></tr>`).join("")}</table>`:`<div class="empty">No "closed" reports yet.</div>`}
+  <h2>🌑 Places where people felt unsafe (last 2 months)</h2>
+  ${(r.feltUnsafe||[]).length?`<table><tr><th>Place</th><th class="num">Reports</th></tr>${r.feltUnsafe.map(p=>`<tr><td>${esc(p.name)}</td><td class="num">${p.reports}</td></tr>`).join("")}</table>`:`<div class="empty">No reports yet.</div>`}`;
+})();
+</script>
+</body>
+</html>

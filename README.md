@@ -29,8 +29,15 @@ Open the URL on your phone in Chrome, then Menu → *Add to Home screen*.
 
 HTTPS is required for GPS, which both hosts give you automatically.
 
+## Intelligence (self-learning, autonomous)
+- **Safer route choice** – the Route tab asks for up to 3 alternative walks and scores each: length, unsafe-spot reports (weighted by confidence; night-only reports count fully at night; harassment weighs more), the longest stretch with no safe place, and police/hospitals/open places along the way. The safest is recommended with the reason ("427 m longer but avoids 1 unsafe spot · passes 1 police station"), and Google Maps is given waypoints so it follows that path.
+- **Learns from votes** – every vote records when it was made. Recent votes count more (45-day half-life; ignored after 6 months). Reports are split day vs night, so the app learns e.g. "usually closed at night" and ranks such places far down at that time (and never picks them for the emergency button).
+- **Learns what helps** – starting directions to a place is counted (once per phone per place per day, day/night separately, no location stored). Places people actually go to at this time of day get a small boost and a "👣 N people went here" label.
+- **Self-cleaning trust** – unsafe-spot confidence fades with age (60-day half-life), rises with "still there" confirmations, drops with "fixed" votes; low-confidence reports fade on the map and then disappear.
+- **Nightly worker** (`api/nightly.js`, Vercel Cron at 21:30 UTC = 3 am IST; at most once per 20 h) – merges duplicate places (moving votes; a second reporter of the same unsafe spot counts as a confirmation), hides suspected spam (one phone adding 25+ places a week), pre-loads map data for 20 busy areas (rotating), and writes the **community safety report** (`/api/report`, shown at `/report.html`): toilet scarcity by area, unsafe-spot reports by area (90 days), places most often found closed or felt unsafe (2 months).
+
 ## Faster map data (shared cache)
-`api/places.js` asks OpenStreetMap's free Overpass servers on the app's behalf and caches each answer in the same Upstash Redis for 12 hours. Search centres are snapped to a ~500 m grid, so people searching the same neighbourhood share one cached answer and get results almost instantly. If our server can't help, the app asks the public servers directly (trying a second one after 8 s).
+`api/places.js` asks OpenStreetMap's free Overpass servers on the app's behalf and caches each answer in the same Upstash Redis for 3 days. Search centres are snapped to a ~500 m grid, so people searching the same neighbourhood share one cached answer and get results almost instantly. If our server can't help, the app asks the public servers directly (trying a second one after 8 s).
 
 ## Shared community data
 Ratings, reports (closed / dirty / unsafe / felt safe…) and places added by users are shared with everyone through `api/community.js`, a Vercel serverless function backed by **Upstash Redis** (Vercel → Storage → Upstash Redis, connected to this project).
