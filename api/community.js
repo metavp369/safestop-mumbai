@@ -4,8 +4,15 @@
 // Env vars (either naming works): KV_REST_API_URL / KV_REST_API_TOKEN
 //                                  UPSTASH_REDIS_REST_URL / UPSTASH_REDIS_REST_TOKEN
 
-const URL_ = process.env.KV_REST_API_URL || process.env.UPSTASH_REDIS_REST_URL;
-const TOKEN = process.env.KV_REST_API_TOKEN || process.env.UPSTASH_REDIS_REST_TOKEN;
+// Accept KV_*, UPSTASH_REDIS_*, or any custom prefix (e.g. STORAGE_REST_API_URL / STORAGE_REST_API_TOKEN)
+function findEnv(suffixes) {
+  for (const k of suffixes) if (process.env[k]) return process.env[k];
+  const env = process.env;
+  for (const name of Object.keys(env)) for (const k of suffixes) if (name.endsWith("_" + k.split("_").slice(-3).join("_")) && env[name]) return env[name];
+  return "";
+}
+const URL_ = findEnv(["KV_REST_API_URL", "UPSTASH_REDIS_REST_URL"]);
+const TOKEN = findEnv(["KV_REST_API_TOKEN", "UPSTASH_REDIS_REST_TOKEN"]);
 
 const MODES = { toilet: "toilet", police: "police", medical: "medical", safe: "safe" };
 const TYPES = {
