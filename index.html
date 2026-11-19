@@ -979,7 +979,7 @@ const ENDPOINTS=["https://overpass-api.de/api/interpreter","https://overpass.pri
 function namesQuery(lat,lon){
   // Streets, stations and landmarks close to each toilet, used to give unnamed toilets a useful name.
   const a=`(around:2900,${(Math.round(lat*200)/200).toFixed(3)},${(Math.round(lon*200)/200).toFixed(3)})`;
-  return `[out:json][timeout:25];nwr["amenity"="toilets"]${a}->.t;way(around.t:90)["highway"]["name"]["highway"!~"^(footway|path|steps|corridor|platform|cycleway|bridleway|proposed|construction)$"];out tags geom 400;(nwr(around.t:450)["railway"~"^(station|halt)$"]["name"];nwr(around.t:130)["amenity"~"^(bus_station|marketplace|place_of_worship|hospital|college|university|cinema|police|post_office|townhall)$"]["name"];nwr(around.t:130)["shop"="mall"]["name"];nwr(around.t:130)["leisure"~"^(park|stadium)$"]["name"];nwr(around.t:130)["tourism"~"^(attraction|museum)$"]["name"];node(around.t:1500)["place"~"^(suburb|neighbourhood|quarter)$"]["name"];);out center tags 400;`;
+  return `[out:json][timeout:25];nwr["amenity"="toilets"]${a}->.t;way(around.t:70)["highway"]["name"]["highway"!~"^(footway|path|steps|corridor|platform|cycleway|bridleway|proposed|construction)$"];out tags geom 400;(nwr(around.t:400)["railway"~"^(station|halt)$"]["name"];nwr(around.t:130)["amenity"~"^(bus_station|marketplace|place_of_worship|hospital|college|university|cinema|police|post_office|townhall)$"]["name"];nwr(around.t:130)["shop"="mall"]["name"];nwr(around.t:130)["leisure"~"^(park|stadium)$"]["name"];nwr(around.t:130)["tourism"~"^(attraction|museum)$"]["name"];node(around.t:1200)["place"~"^(suburb|neighbourhood|quarter)$"]["name"];);out center tags 400;`;
 }
 function buildQuery(mode,lat,lon,backup){
   if(mode==="names")return namesQuery(lat,lon);
@@ -1082,12 +1082,14 @@ function autoName(p){const w=p.where; if(!w)return p.name; const L=WHERE_T[lang]
   const base=p.operator&&p.operator.length<=20?p.operator+(lang==="en"?" toilet":" "+L.toilet):L.toilet;
   return L.f(base,w.rel,x)}
 const namesCache={};
-async function nameToilets(at){
+async function nameToilets(at,tries=0){
   places.forEach(p=>{if(p.where)p.name=autoName(p)});
   const need=places.filter(p=>p.auto&&!p.where&&!p.mine);
   if(!need.length)return;
   const q=buildQuery("names",at.lat,at.lon);
-  let j; try{j=await(namesCache[q]||(namesCache[q]=overpass(q)))}catch(e){delete namesCache[q];return}
+  let j; try{j=await(namesCache[q]||(namesCache[q]=overpass(q)))}catch(e){delete namesCache[q];
+    // map servers busy: try again in a while (up to 3 times) if the person is still looking at the same place
+    if(tries<3)setTimeout(()=>{if(mode==="toilet"&&me===at)nameToilets(at,tries+1)},30000*(tries+1));return}
   const els=(j&&j.elements)||[]; if(!els.length)return;
   const ky=110540, kx=111320*Math.cos(at.lat*Math.PI/180);
   const nm=tg=>({name:tg.name||"",en:tg["name:en"]||"",hi:tg["name:hi"]||"",mr:tg["name:mr"]||""});
@@ -1104,7 +1106,7 @@ async function nameToilets(at){
     let road=null,rd=1e9; roads.forEach(r=>{for(let i=1;i<r.pts.length;i++){const d=segD(px,py,r.pts[i-1],r.pts[i]);if(d<rd){rd=d;road=r}}});
     const [st,sd]=near(stns,px,py), [lm,ld]=near(marks,px,py), [ar,ad]=near(areas,px,py);
     const w=st&&sd<=300?{rel:"near",n:st.n,stn:st.stn}:road&&rd<=35?{rel:"on",n:road.n}:lm&&ld<=120?{rel:"near",n:lm.n}
-      :road&&rd<=90?{rel:"near",n:road.n}:st&&sd<=450?{rel:"near",n:st.n,stn:st.stn}:ar&&ad<=1500?{rel:"in",n:ar.n}:null;
+      :road&&rd<=70?{rel:"near",n:road.n}:st&&sd<=400?{rel:"near",n:st.n,stn:st.stn}:ar&&ad<=1200?{rel:"in",n:ar.n}:null;
     if(w){p.where=w;p.name=autoName(p);changed++}});
   if(!changed)return;
   render();
