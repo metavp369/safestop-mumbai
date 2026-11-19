@@ -17,14 +17,14 @@ const TYPES = {
 const HAZARD_NAMES = { dark: "Dark lane / no lights", streetlight: "Broken streetlight", harassment: "Harassment reported", deserted: "Deserted at night", other: "Feels unsafe" };
 const HAZARD_MAX_AGE = 180 * 24 * 3600 * 1000; // reports fade after ~6 months
 const FLAGS = ["closed", "dirty", "nowater", "unsafe", "wrong", "dark", "good", "confirm", "fixed"];
-const BBOX = { minLat: 18.85, maxLat: 19.5, minLon: 72.7, maxLon: 73.25 }; // Mumbai Metropolitan Region
+const { BOXES } = require("../lib/areas.js"); // Mumbai region, Delhi, Gurgaon
 const LIMITS = { add: 15, vote: 300, delete: 30, read: 600, nav: 200 }; // per IP per hour
 const DAY = 86400000, VOTE_MAX_AGE = 180 * DAY, HALF_LIFE = 45 * DAY;
 const isNight = (h) => h >= 19 || h < 6;
 
 const str = (v, n) => String(v == null ? "" : v).replace(/[\u0000-\u001f<>]/g, "").trim().slice(0, n);
 const num = (v) => (typeof v === "number" ? v : parseFloat(v));
-const inBox = (lat, lon) => lat >= BBOX.minLat && lat <= BBOX.maxLat && lon >= BBOX.minLon && lon <= BBOX.maxLon;
+const inBox = (lat, lon) => BOXES.some((b) => lat >= b[0] && lat <= b[1] && lon >= b[2] && lon <= b[3]);
 const okDevice = (d) => typeof d === "string" && /^[a-z0-9]{12,40}$/i.test(d);
 const okId = (id) => typeof id === "string" && /^[nwrc][0-9a-z]{1,24}$/i.test(id);
 
@@ -37,7 +37,7 @@ async function rateLimit(ip, action) {
 
 function cleanPlace(p, mode) {
   const lat = num(p.lat), lon = num(p.lon);
-  if (!isFinite(lat) || !isFinite(lon) || !inBox(lat, lon)) throw new Error("Location must be in Mumbai");
+  if (!isFinite(lat) || !isFinite(lon) || !inBox(lat, lon)) throw new Error("Location must be in Mumbai, Delhi or Gurgaon");
   if (mode === "hazard") p = { ...p, name: HAZARD_NAMES[str(p.type, 20)] || "Unsafe spot" };
   const name = str(p.name, 80);
   if (name.length < 2) throw new Error("Name is required");

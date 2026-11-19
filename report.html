@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>SafeStop Mumbai – Community Safety Report</title>
+<title>SafeStop – Community Safety Report</title>
 <meta name="theme-color" content="#0f766e">
 <style>
 :root{--teal:#0f766e;--ink:#0f172a;--mut:#64748b;--line:#e2e8f0;--red:#dc2626;--bg:#f8fafc}
@@ -30,7 +30,7 @@ a{color:var(--teal)}
 </head>
 <body>
 <header>
-  <h1>🚻 SafeStop Mumbai – Community Safety Report</h1>
+  <h1>🚻 SafeStop – Community Safety Report</h1>
   <p id="sub">Loading…</p>
   <button class="btn" id="copy">📋 Copy link to share</button> <a class="btn" href="/">Open the app</a>
 </header>
@@ -48,7 +48,7 @@ document.getElementById("copy").onclick=async e=>{try{await navigator.clipboard.
   try{const res=await fetch("/api/report");if(!res.ok)throw new Error((await res.json().catch(()=>({}))).error||res.status);r=await res.json()}
   catch(e){sub.textContent="Report not available yet";main.innerHTML=`<div class="empty">The first report is created by the nightly worker (around 3 am). ${esc(e.message||"")}</div>`;return}
   const d=new Date(r.generatedAt);
-  sub.textContent=`Updated ${d.toLocaleString("en-IN",{dateStyle:"medium",timeStyle:"short"})} · 20 busy areas of Mumbai`;
+  sub.textContent=`Updated ${d.toLocaleString("en-IN",{dateStyle:"medium",timeStyle:"short"})} · ${d.areas.length} busy areas of Mumbai, Delhi & Gurgaon`;
   const A=r.areas||[], withT=A.filter(a=>a.toilets!=null);
   const tot=r.communityTotals||{};
   const maxT=Math.max(1,...withT.map(a=>a.toilets));
