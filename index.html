@@ -1076,6 +1076,7 @@ function load(){
   render(); // clear the previous mode's results straight away
   return p;
 }
+const failed={}; // mode -> the place whose search failed (no data at all)
 async function loadInner(){
   if(!me)return; const at=me, m=mode, t0=Date.now();
   const st=$("status"), what=m==="transit"?"stations":m==="safe"?"safe spots":m==="police"?"police stations":m==="medical"?"hospitals & medical stores":"toilets", near=at.label||"you";
@@ -1100,10 +1101,13 @@ async function loadInner(){
   }catch(e){
     const old=c&&c.live&&c.me&&hav(c.me.lat,c.me.lon,at.lat,at.lon)<1500?c:null;
     if(old){live=old.live;toast(`Map server busy – showing results saved ${since(old.at)}`)}
-    else{live=[];toast("Couldn't reach the map data server. Showing your saved & added places. In an emergency, use SOS.")}
+    else{live=[];failed[m]=at;toast("Couldn't reach the map data server. Trying again shortly. In an emergency, use SOS.");
+      // map servers busy: try again by itself (up to 3 times) while the person is still on this mode and place
+      const n=(at._retries=(at._retries||0)+1); if(n<=3)setTimeout(()=>{if(mode===m&&me===at)load()},15000*n)}
   }
   clearInterval(tick);
   if(mode!==m||me!==at)return; // the person moved or switched mode meanwhile
+  if(live.length||failed[m]!==at)delete failed[m];
   places=live.concat(ownMine());
   render();
   loadCommunity();
@@ -1248,7 +1252,7 @@ function render(){
   if(layer){layer.clearLayers(); v.slice(0,120).forEach(p=>L.marker([p.lat,p.lon],{icon:pinIcon(p)}).on("click",()=>openDetail(p)).addTo(layer));if(mode==="safe")drawHazards()}
   if(!me){st.textContent="Choose your area or tap “My location”.";list.innerHTML="";renderSaved();return}
   if(!(curLoad&&curLoad.m===mode&&!v.length))st.textContent=v.length?`${v.length} ${mode==="transit"?"stations within 3":mode==="safe"?"safe spots within 2":mode==="police"?"police stations within 5":mode==="medical"?"hospitals & medical stores within 3":"places within 2.5"} km of ${me.label||"you"} · best match first`:"";
-  list.innerHTML=v.length?v.slice(0,60).map(itemHTML).join(""):curLoad&&curLoad.m===mode?`<div class="empty">Searching…</div>`:mode==="transit"?`<div class="empty">No metro or train station found within 3 km with these filters.<br>Try removing a filter, or choose another area.</div>`:mode==="safe"?`<div class="empty">No safe spots found with these filters nearby.<br><b>In danger? Call 112 now.</b><br>Try removing a filter, or add a place you know from “+ Add”.</div>`:mode==="medical"?`<div class="empty">Nothing found with these filters nearby.<br><b>Medical emergency? Call ${CY().amb} for an ambulance.</b><br>Try removing a filter, or add a place you know from “+ Add”.</div>`:mode==="police"?`<div class="empty">No police station found on the map nearby.<br><b>In danger? Call 112 now.</b><br>Know one? Add it from “+ Add”.</div>`:`<div class="empty">No toilets match these filters nearby.<br>Try removing a filter or turn on “⛽ Show backups” (petrol pumps, malls, stations).</div>`;
+  list.innerHTML=v.length?v.slice(0,60).map(itemHTML).join(""):failed[mode]===me?`<div class="empty">Couldn’t reach the map data server, so places near you could not be loaded. It will try again by itself.<br><b>In an emergency, use SOS.</b></div>`:curLoad&&curLoad.m===mode?`<div class="empty">Searching…</div>`:mode==="transit"?`<div class="empty">No metro or train station found within 3 km with these filters.<br>Try removing a filter, or choose another area.</div>`:mode==="safe"?`<div class="empty">No safe spots found with these filters nearby.<br><b>In danger? Call 112 now.</b><br>Try removing a filter, or add a place you know from “+ Add”.</div>`:mode==="medical"?`<div class="empty">Nothing found with these filters nearby.<br><b>Medical emergency? Call ${CY().amb} for an ambulance.</b><br>Try removing a filter, or add a place you know from “+ Add”.</div>`:mode==="police"?`<div class="empty">No police station found on the map nearby.<br><b>In danger? Call 112 now.</b><br>Know one? Add it from “+ Add”.</div>`:`<div class="empty">No toilets match these filters nearby.<br>Try removing a filter or turn on “⛽ Show backups” (petrol pumps, malls, stations).</div>`;
   list.querySelectorAll(".item").forEach(el=>el.onclick=()=>openDetail(v.find(p=>p.id===el.dataset.id)));
   renderSaved();
 }
@@ -1417,6 +1421,7 @@ function emergency(){
   showEmergency();
 }
 function showEmergency(){
+  if(failed[mode]===me&&!visible().length)return emergencyFailed();
   if(mode==="police")return emergencyPolice();
   if(mode==="medical")return emergencyMed();
   if(mode==="transit")return emergencyTransit();
@@ -1435,6 +1440,17 @@ function showEmergency(){
   $("eSos").onclick=sos;
 }
 
+function emergencyFailed(){
+  const m=mode;
+  sheet(`<h2>⚠️ Couldn’t load places near you</h2>
+   <p class="meta">The free map data server is busy right now, so the search did not finish. This does <b>not</b> mean there is nothing nearby.</p>
+   ${m==="medical"?`<a class="btn red" href="tel:${CY().amb}">🚑 Serious? Call ${CY().amb} ambulance now</a>`:`<a class="btn red" href="tel:112">📞 In danger? Call 112 now</a>`}
+   ${m==="toilet"?`<p class="meta" style="margin-top:10px">Usually close by: petrol pumps, railway &amp; metro stations, malls, hospitals, big restaurants.</p>`:""}
+   <button class="btn pri" id="eRetry">🔄 Try again</button>
+   <button class="btn out" id="eSos">More helplines &amp; share location</button>`);
+  $("eSos").onclick=sos;
+  $("eRetry").onclick=()=>{$("sheet").classList.remove("show");if(me){me._retries=0;toast("Searching again…");load().then(()=>{if(mode===m)showEmergency()})}};
+}
 function emergencyMed(){
   const all=places.filter(p=>p.kind==="medical"&&!(reports[p.id]||{}).closed).map(p=>({...p,dist:hav(me.lat,me.lon,p.lat,p.lon)})).sort((a,b)=>a.dist-b.dist);
   const hosp=all.filter(p=>p.type==="hospital"), emg=hosp.find(p=>p.emergency);
