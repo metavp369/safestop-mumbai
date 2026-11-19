@@ -1055,7 +1055,15 @@ function norm(el,backup){const tg=el.tags||{};const lat=el.lat??el.center?.lat, 
     baby:tg.changing_table||tg.diaper||"",fee:tg.fee||"",charge:tg.charge||"",hours:tg.opening_hours||"",
     seated:/seated/.test(tg["toilets:position"]||""),squat:/squat/.test(tg["toilets:position"]||""),operator:tg.operator||"",
     water:tg.drinking_water||"",access:tg.access||"",desc:tg.description||"",tags:tg}}
-async function load(){
+let curLoad=null; // the search in progress: {p, m}
+function load(){
+  if(!me)return Promise.resolve();
+  const m=mode, p=loadInner(); curLoad={p,m};
+  p.finally(()=>{if(curLoad&&curLoad.p===p){curLoad=null;render()}});
+  render(); // clear the previous mode's results straight away
+  return p;
+}
+async function loadInner(){
   if(!me)return; const at=me, m=mode, t0=Date.now();
   const st=$("status"), what=m==="transit"?"stations":m==="safe"?"safe spots":m==="police"?"police stations":m==="medical"?"hospitals & medical stores":"toilets", near=at.label||"you";
   const R=m==="police"?5000:m==="medical"||m==="transit"?3000:m==="safe"?2000:2500;
@@ -1226,8 +1234,8 @@ function render(){
   const v=visible(), list=$("list"), st=$("status");
   if(layer){layer.clearLayers(); v.slice(0,120).forEach(p=>L.marker([p.lat,p.lon],{icon:pinIcon(p)}).on("click",()=>openDetail(p)).addTo(layer));if(mode==="safe")drawHazards()}
   if(!me){st.textContent="Choose your area or tap “My location”.";list.innerHTML="";renderSaved();return}
-  st.textContent=v.length?`${v.length} ${mode==="transit"?"stations within 3":mode==="safe"?"safe spots within 2":mode==="police"?"police stations within 5":mode==="medical"?"hospitals & medical stores within 3":"places within 2.5"} km of ${me.label||"you"} · best match first`:"";
-  list.innerHTML=v.length?v.slice(0,60).map(itemHTML).join(""):mode==="transit"?`<div class="empty">No metro or train station found within 3 km with these filters.<br>Try removing a filter, or choose another area.</div>`:mode==="safe"?`<div class="empty">No safe spots found with these filters nearby.<br><b>In danger? Call 112 now.</b><br>Try removing a filter, or add a place you know from “+ Add”.</div>`:mode==="medical"?`<div class="empty">Nothing found with these filters nearby.<br><b>Medical emergency? Call 108 for an ambulance.</b><br>Try removing a filter, or add a place you know from “+ Add”.</div>`:mode==="police"?`<div class="empty">No police station found on the map nearby.<br><b>In danger? Call 112 now.</b><br>Know one? Add it from “+ Add”.</div>`:`<div class="empty">No toilets match these filters nearby.<br>Try removing a filter or turn on “⛽ Show backups” (petrol pumps, malls, stations).</div>`;
+  if(!(curLoad&&curLoad.m===mode&&!v.length))st.textContent=v.length?`${v.length} ${mode==="transit"?"stations within 3":mode==="safe"?"safe spots within 2":mode==="police"?"police stations within 5":mode==="medical"?"hospitals & medical stores within 3":"places within 2.5"} km of ${me.label||"you"} · best match first`:"";
+  list.innerHTML=v.length?v.slice(0,60).map(itemHTML).join(""):curLoad&&curLoad.m===mode?`<div class="empty">Searching…</div>`:mode==="transit"?`<div class="empty">No metro or train station found within 3 km with these filters.<br>Try removing a filter, or choose another area.</div>`:mode==="safe"?`<div class="empty">No safe spots found with these filters nearby.<br><b>In danger? Call 112 now.</b><br>Try removing a filter, or add a place you know from “+ Add”.</div>`:mode==="medical"?`<div class="empty">Nothing found with these filters nearby.<br><b>Medical emergency? Call 108 for an ambulance.</b><br>Try removing a filter, or add a place you know from “+ Add”.</div>`:mode==="police"?`<div class="empty">No police station found on the map nearby.<br><b>In danger? Call 112 now.</b><br>Know one? Add it from “+ Add”.</div>`:`<div class="empty">No toilets match these filters nearby.<br>Try removing a filter or turn on “⛽ Show backups” (petrol pumps, malls, stations).</div>`;
   list.querySelectorAll(".item").forEach(el=>el.onclick=()=>openDetail(v.find(p=>p.id===el.dataset.id)));
   renderSaved();
 }
@@ -1386,6 +1394,13 @@ function emergency(){
   // In an emergency use the phone's real position, not the centre of a chosen area.
   if((!me||me.label!=="you")&&navigator.geolocation){ gps(true); return }
   if(!me){ toast("Location not available – please choose your area");areaSel.focus();return }
+  if(curLoad&&curLoad.m===mode&&!visible().length){
+    // results for this mode are still loading: wait for them rather than say "nothing found"
+    const m=mode, eb=$("emgBtn"); locating=true; eb.classList.add("busy");
+    toast("Still searching – showing the nearest one as soon as it loads…");
+    curLoad.p.catch(()=>{}).then(()=>{locating=false;eb.classList.remove("busy");if(mode===m)showEmergency()});
+    return;
+  }
   showEmergency();
 }
 function showEmergency(){
