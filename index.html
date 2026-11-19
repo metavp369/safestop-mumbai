@@ -678,7 +678,7 @@ button{font:inherit;cursor:pointer;border:0;background:none;color:inherit}
 header{background:var(--teal);color:#fff;padding:10px 14px;display:flex;align-items:center;gap:10px}
 header h1{font-size:1.1em;flex:1;display:flex;align-items:center;gap:8px}
 header .hb{background:rgba(255,255,255,.16);border-radius:8px;padding:6px 10px;font-size:.85em}
-.modes{display:flex;background:#0b5e58;padding:4px;gap:4px}.modes button{flex:1;color:#ccfbf1;padding:8px;border-radius:10px;font-weight:600;font-size:.95em}.modes button.on{background:#fff;color:var(--teal)}body.police .modes button.on{color:#1d4ed8}body.police header{background:#1e3a8a}body.police .modes{background:#172f6e}.police-only{display:none}body.police .police-only{display:block}body.police .cbx.police-only{display:flex}body.police .toilet-only,body.medical .toilet-only,body.safe .toilet-only{display:none!important}body.safe header{background:#581c87}body.safe .modes{background:#3b0764}body.safe .modes button.on{color:#7e22ce}.modes button{font-size:.85em;padding:8px 2px}.safe-note{background:#faf5ff;border:1px solid #e9d5ff;border-radius:12px;padding:10px;font-size:.85em;margin-top:10px;color:#581c87}.svc-only,.med-only{display:none}body.police .svc-only,body.medical .svc-only,body.medical .med-only{display:block}body.medical .cbx.med-only,body.medical .chips.med-only{display:flex}body.medical header{background:#166534}body.medical .modes{background:#14532d}body.medical .modes button.on{color:#15803d}.call108{background:#15803d;color:#fff}.call112{background:#1d4ed8;color:#fff}
+.modes{display:flex;background:#0b5e58;padding:4px;gap:4px}.modes button{flex:1;color:#ccfbf1;padding:8px;border-radius:10px;font-weight:600;font-size:.95em}.modes button.on{background:#fff;color:var(--teal)}body.police .modes button.on{color:#1d4ed8}body.police header{background:#1e3a8a}body.police .modes{background:#172f6e}.police-only{display:none}body.police .police-only{display:block}body.police .cbx.police-only{display:flex}body.police .toilet-only,body.medical .toilet-only,body.safe .toilet-only,body.transit .toilet-only{display:none!important}body.safe header{background:#581c87}body.safe .modes{background:#3b0764}body.safe .modes button.on{color:#7e22ce}.modes button{font-size:.78em;padding:5px 2px;display:flex;flex-direction:column;align-items:center;gap:1px;white-space:nowrap;overflow:hidden;min-width:0;line-height:1.25}.modes button span{overflow:hidden;text-overflow:ellipsis;max-width:100%}.safe-note{background:#faf5ff;border:1px solid #e9d5ff;border-radius:12px;padding:10px;font-size:.85em;margin-top:10px;color:#581c87}.svc-only,.med-only{display:none}body.police .svc-only,body.medical .svc-only,body.medical .med-only{display:block}body.medical .cbx.med-only,body.medical .chips.med-only{display:flex}body.medical header{background:#166534}body.medical .modes{background:#14532d}body.medical .modes button.on{color:#15803d}.call108{background:#15803d;color:#fff}.call112{background:#1d4ed8;color:#fff}
 .banner{background:#fef3c7;color:#78350f;font-size:.85em;padding:8px 14px;display:none}
 .banner.show{display:block}
 .top{padding:10px 12px;background:#fff;border-bottom:1px solid var(--line)}
@@ -687,6 +687,8 @@ header .hb{background:rgba(255,255,255,.16);border-radius:8px;padding:6px 10px;f
 .emg:active{transform:scale(.98)}
 .sos{background:var(--red);color:#fff;font-weight:800;font-size:1.05em;letter-spacing:.04em;border-radius:14px;padding:0 18px;min-width:84px;box-shadow:0 4px 14px rgba(220,38,38,.35)}
 .sos:active{transform:scale(.98)}
+body.transit header{background:#9a3412}body.transit .modes{background:#7c2d12}body.transit .modes button.on{color:#c2410c}body.transit .emg{background:#c2410c;box-shadow:0 4px 14px rgba(194,65,12,.3)}
+.tr-only{display:none}body.transit .chips.tr-only{display:flex}body:not(.transit) .tr-only{display:none!important}body.transit #addForm{display:none}body.transit .loc .fbtn{display:none}
 body.police .emg{background:#1d4ed8;box-shadow:0 4px 14px rgba(29,78,216,.3)}body.medical .emg{background:#15803d;box-shadow:0 4px 14px rgba(21,128,61,.3)}body.safe .emg{background:#7e22ce;box-shadow:0 4px 14px rgba(126,34,206,.3)}
 .emg.busy{opacity:.75}
 #filt{display:none}#filt.open{display:block}
@@ -774,7 +776,7 @@ header h1{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;
   <button class="hb" id="langBtn">EN / हि / म</button>
   <button class="hb" id="bigBtn" title="Large text">A+</button>
 </header>
-<div class="modes" id="modes"><button data-mode="toilet" class="on">🚻 <span data-t="m_toilet">Toilets</span></button><button data-mode="police">🚓 <span data-t="m_police">Police</span></button><button data-mode="medical">🏥 <span data-t="m_med">Medical</span></button><button data-mode="safe">🌙 <span data-t="m_safe">Safe spot</span></button></div>
+<div class="modes" id="modes"><button data-mode="toilet" class="on">🚻 <span data-t="m_toilet">Toilets</span></button><button data-mode="police">🚓 <span data-t="m_police">Police</span></button><button data-mode="medical">🏥 <span data-t="m_med">Medical</span></button><button data-mode="safe">🌙 <span data-t="m_safe">Safe spot</span></button><button data-mode="transit">🚇 <span data-t="m_tr">Transport</span></button></div>
 <div class="banner" id="banner"></div>
 
 <div class="top">
@@ -805,6 +807,12 @@ header h1{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;
     <button class="chip" data-m="h24">🌙 24 hrs</button>
     <button class="chip" data-m="emergency">🚑 Casualty / emergency</button>
   </div>
+  </div>
+  <div class="chips tr-only" id="trChips">
+    <button class="chip" data-tr="metro">🚇 Metro</button>
+    <button class="chip" data-tr="rail">🚆 Local train</button>
+    <button class="chip" data-tr="mono">🚝 Monorail</button>
+    <button class="chip" data-tr="access">♿ Accessible</button>
   </div>
   <div class="chips safe-only" id="safeChips">
     <button class="chip" data-s="h24">✅ Confirmed 24 hrs</button>
@@ -884,15 +892,15 @@ const store={get(k,d){try{const v=localStorage.getItem("ss_"+k);return v?JSON.pa
 
 /* ---------- i18n ---------- */
 const T={
-en:{app:"SafeStop Mumbai",t_route:"Route",m_safe:"Safe spot",emg_s:"Find a safe spot NOW",near_s:"Nearest safe spot",m_med:"Medical",emg_m:"Nearest hospital / medical NOW",near_m:"Nearest medical help",call_p:"Call",m_toilet:"Toilets",m_police:"Police",emg_p:"Nearest police station NOW",near_p:"Nearest police station",call:"Call station",emg:"I need a toilet NOW",any:"Anyone",woman:"Woman",elder:"Elderly",child:"Child",f_women:"♀ Women's",f_access:"♿ Accessible",f_baby:"🍼 Baby change",f_free:"₹0 Free",f_24:"🌙 24 hrs",f_west:"🚽 Western seat",f_backup:"⛽ Show backups",gps:"My location",filters:"Filters",t_list:"Nearby",t_saved:"Saved ⭐",t_add:"+ Add",t_info:"Me",go:"Start walking directions",near:"Nearest toilet",walk:"min walk",save:"Save toilet",usehere:"Use my current spot",name:"Name / landmark",pinloc:"Location",
+en:{app:"SafeStop Mumbai",m_tr:"Transport",emg_t:"Nearest station NOW",near_t:"Nearest station",t_route:"Route",m_safe:"Safe spot",emg_s:"Find a safe spot NOW",near_s:"Nearest safe spot",m_med:"Medical",emg_m:"Nearest hospital / medical NOW",near_m:"Nearest medical help",call_p:"Call",m_toilet:"Toilets",m_police:"Police",emg_p:"Nearest police station NOW",near_p:"Nearest police station",call:"Call station",emg:"I need a toilet NOW",any:"Anyone",woman:"Woman",elder:"Elderly",child:"Child",f_women:"♀ Women's",f_access:"♿ Accessible",f_baby:"🍼 Baby change",f_free:"₹0 Free",f_24:"🌙 24 hrs",f_west:"🚽 Western seat",f_backup:"⛽ Show backups",gps:"My location",filters:"Filters",t_list:"Nearby",t_saved:"Saved ⭐",t_add:"+ Add",t_info:"Me",go:"Start walking directions",near:"Nearest toilet",walk:"min walk",save:"Save toilet",usehere:"Use my current spot",name:"Name / landmark",pinloc:"Location",
  add_tip:"Know a toilet that isn't listed? Tap on the map to drop a pin (or use your current spot), fill in what you know and save it. It is shared with everyone using SafeStop."},
-hi:{app:"सेफस्टॉप मुंबई",t_route:"रास्ता",m_safe:"सुरक्षित जगह",emg_s:"अभी सुरक्षित जगह खोजें",near_s:"सबसे पास की सुरक्षित जगह",m_med:"मेडिकल",emg_m:"सबसे पास का अस्पताल / मेडिकल",near_m:"सबसे पास की मेडिकल मदद",call_p:"कॉल करें",m_toilet:"शौचालय",m_police:"पुलिस",emg_p:"सबसे पास का पुलिस स्टेशन",near_p:"सबसे पास का पुलिस स्टेशन",call:"स्टेशन को कॉल करें",emg:"मुझे अभी शौचालय चाहिए",any:"कोई भी",woman:"महिला",elder:"बुज़ुर्ग",child:"बच्चा",f_women:"♀ महिलाओं के लिए",f_access:"♿ व्हीलचेयर",f_baby:"🍼 बेबी चेंजिंग",f_free:"₹0 मुफ़्त",f_24:"🌙 24 घंटे",f_west:"🚽 वेस्टर्न सीट",f_backup:"⛽ विकल्प दिखाएँ",gps:"मेरी लोकेशन",filters:"फ़िल्टर",t_list:"आस-पास",t_saved:"सेव ⭐",t_add:"+ जोड़ें",t_info:"मैं",go:"पैदल रास्ता दिखाएँ",near:"सबसे पास का शौचालय",walk:"मिनट पैदल",save:"सेव करें",usehere:"मेरी जगह इस्तेमाल करें",name:"नाम / पहचान",pinloc:"जगह",
+hi:{m_tr:"परिवहन",emg_t:"सबसे पास का स्टेशन",near_t:"सबसे पास का स्टेशन",app:"सेफस्टॉप मुंबई",t_route:"रास्ता",m_safe:"सुरक्षित जगह",emg_s:"अभी सुरक्षित जगह खोजें",near_s:"सबसे पास की सुरक्षित जगह",m_med:"मेडिकल",emg_m:"सबसे पास का अस्पताल / मेडिकल",near_m:"सबसे पास की मेडिकल मदद",call_p:"कॉल करें",m_toilet:"शौचालय",m_police:"पुलिस",emg_p:"सबसे पास का पुलिस स्टेशन",near_p:"सबसे पास का पुलिस स्टेशन",call:"स्टेशन को कॉल करें",emg:"मुझे अभी शौचालय चाहिए",any:"कोई भी",woman:"महिला",elder:"बुज़ुर्ग",child:"बच्चा",f_women:"♀ महिलाओं के लिए",f_access:"♿ व्हीलचेयर",f_baby:"🍼 बेबी चेंजिंग",f_free:"₹0 मुफ़्त",f_24:"🌙 24 घंटे",f_west:"🚽 वेस्टर्न सीट",f_backup:"⛽ विकल्प दिखाएँ",gps:"मेरी लोकेशन",filters:"फ़िल्टर",t_list:"आस-पास",t_saved:"सेव ⭐",t_add:"+ जोड़ें",t_info:"मैं",go:"पैदल रास्ता दिखाएँ",near:"सबसे पास का शौचालय",walk:"मिनट पैदल",save:"सेव करें",usehere:"मेरी जगह इस्तेमाल करें",name:"नाम / पहचान",pinloc:"जगह",
  add_tip:"कोई शौचालय सूची में नहीं है? मैप पर टैप करके पिन लगाएँ, जानकारी भरें और सेव करें। यह सभी SafeStop यूज़र्स को दिखेगा।"},
-mr:{app:"सेफस्टॉप मुंबई",t_route:"मार्ग",m_safe:"सुरक्षित जागा",emg_s:"आत्ता सुरक्षित जागा शोधा",near_s:"सर्वात जवळची सुरक्षित जागा",m_med:"मेडिकल",emg_m:"सर्वात जवळचे हॉस्पिटल / मेडिकल",near_m:"सर्वात जवळची वैद्यकीय मदत",call_p:"कॉल करा",m_toilet:"शौचालय",m_police:"पोलीस",emg_p:"सर्वात जवळचे पोलीस स्टेशन",near_p:"सर्वात जवळचे पोलीस स्टेशन",call:"स्टेशनला कॉल करा",emg:"मला आत्ता शौचालय हवे",any:"कोणीही",woman:"महिला",elder:"ज्येष्ठ",child:"मूल",f_women:"♀ महिलांसाठी",f_access:"♿ व्हीलचेअर",f_baby:"🍼 बेबी चेंजिंग",f_free:"₹0 मोफत",f_24:"🌙 24 तास",f_west:"🚽 वेस्टर्न सीट",f_backup:"⛽ पर्याय दाखवा",gps:"माझे ठिकाण",filters:"फिल्टर",t_list:"जवळपास",t_saved:"सेव्ह ⭐",t_add:"+ जोडा",t_info:"मी",go:"चालत जाण्याचा मार्ग",near:"सर्वात जवळचे शौचालय",walk:"मिनिटे चालत",save:"सेव्ह करा",usehere:"माझे ठिकाण वापरा",name:"नाव / खूण",pinloc:"ठिकाण",
+mr:{m_tr:"वाहतूक",emg_t:"सर्वात जवळचे स्टेशन",near_t:"सर्वात जवळचे स्टेशन",app:"सेफस्टॉप मुंबई",t_route:"मार्ग",m_safe:"सुरक्षित जागा",emg_s:"आत्ता सुरक्षित जागा शोधा",near_s:"सर्वात जवळची सुरक्षित जागा",m_med:"मेडिकल",emg_m:"सर्वात जवळचे हॉस्पिटल / मेडिकल",near_m:"सर्वात जवळची वैद्यकीय मदत",call_p:"कॉल करा",m_toilet:"शौचालय",m_police:"पोलीस",emg_p:"सर्वात जवळचे पोलीस स्टेशन",near_p:"सर्वात जवळचे पोलीस स्टेशन",call:"स्टेशनला कॉल करा",emg:"मला आत्ता शौचालय हवे",any:"कोणीही",woman:"महिला",elder:"ज्येष्ठ",child:"मूल",f_women:"♀ महिलांसाठी",f_access:"♿ व्हीलचेअर",f_baby:"🍼 बेबी चेंजिंग",f_free:"₹0 मोफत",f_24:"🌙 24 तास",f_west:"🚽 वेस्टर्न सीट",f_backup:"⛽ पर्याय दाखवा",gps:"माझे ठिकाण",filters:"फिल्टर",t_list:"जवळपास",t_saved:"सेव्ह ⭐",t_add:"+ जोडा",t_info:"मी",go:"चालत जाण्याचा मार्ग",near:"सर्वात जवळचे शौचालय",walk:"मिनिटे चालत",save:"सेव्ह करा",usehere:"माझे ठिकाण वापरा",name:"नाव / खूण",pinloc:"ठिकाण",
  add_tip:"यादीत नसलेले शौचालय माहीत आहे? नकाशावर टॅप करून पिन लावा, माहिती भरा आणि सेव्ह करा. हे सर्व SafeStop वापरकर्त्यांना दिसेल."}};
 let lang=store.get("lang","en");
 const t=k=>(T[lang]&&T[lang][k])||T.en[k]||k;
-function applyLang(){try{places.forEach(p=>{if(p.where)p.name=autoName(p)})}catch(e){}const et=document.getElementById('emgTxt');if(et)et.textContent=mode==='police'?t('emg_p'):mode==='medical'?t('emg_m'):mode==='safe'?t('emg_s'):t('emg');document.querySelectorAll("[data-t]").forEach(el=>{el.textContent=t(el.dataset.t)});document.documentElement.lang=lang}
+function applyLang(){try{places.forEach(p=>{if(p.where)p.name=autoName(p)})}catch(e){}const et=document.getElementById('emgTxt');if(et)et.textContent=mode==='police'?t('emg_p'):mode==='medical'?t('emg_m'):mode==='safe'?t('emg_s'):mode==='transit'?t('emg_t'):t('emg');document.querySelectorAll("[data-t]").forEach(el=>{el.textContent=t(el.dataset.t)});document.documentElement.lang=lang}
 
 /* ---------- areas ---------- */
 const AREAS=[["CSMT / Fort",18.9400,72.8353],["Colaba",18.9067,72.8147],["Marine Drive / Churchgate",18.9440,72.8235],["Lower Parel",18.9953,72.8302],["Dadar",19.0178,72.8478],["Sion",19.0390,72.8619],["Bandra",19.0596,72.8295],["Kurla",19.0726,72.8845],["Chembur",19.0522,72.9005],["Ghatkopar",19.0860,72.9081],["Vile Parle",19.0990,72.8492],["Juhu",19.1075,72.8263],["Andheri",19.1197,72.8468],["Powai",19.1176,72.9060],["Goregaon",19.1663,72.8526],["Malad",19.1874,72.8484],["Mulund",19.1726,72.9425],["Borivali",19.2307,72.8567],["Thane",19.2183,72.9781],["Vashi",19.0771,72.9986]];
@@ -900,8 +908,8 @@ const areaSel=document.getElementById("area");
 areaSel.innerHTML='<option value="">📌 Area…</option>'+AREAS.map((a,i)=>`<option value="${i}">${a[0]}</option>`).join("");
 
 /* ---------- state ---------- */
-const medF=new Set();
-const modeOf=p=>p.kind==="police"?"police":p.kind==="medical"?"medical":p.kind==="safe"?"safe":p.kind==="hazard"?"hazard":"toilet";
+const medF=new Set(), trF=new Set();
+const modeOf=p=>p.kind==="transit"?"transit":p.kind==="police"?"police":p.kind==="medical"?"medical":p.kind==="safe"?"safe":p.kind==="hazard"?"hazard":"toilet";
 const safeF=new Set();
 const SAFE={police:["🚓","Police",.65],hospital:["🏥","Hospital",.7],fuel:["⛽","Petrol pump",.9],pharmacy:["💊","24-hr chemist",.8],station:["🚉","Station",1.1],shop:["🏪","24-hr shop / café",.85],other:["📍","Safe place",.9]};
 const safeIcon=p=>p.type==="hospital"&&p.big===false?"🩺":(SAFE[p.type]||SAFE.other)[0], safeLabel=p=>p.type==="hospital"&&p.big===false?"Clinic / small hospital":(SAFE[p.type]||SAFE.other)[1];
@@ -923,12 +931,13 @@ async function loadCommunity(){
   if(!me)return; const m=mode, at=me;
   if(m==="safe")loadHazards(at.lat,at.lon,2500).then(l=>{if(mode==="safe"&&me===at){hazards=l;render()}});
   try{
+    if(m!=="transit"){
     const r=await fetch(`/api/community?mode=${m}&lat=${at.lat}&lon=${at.lon}&r=${m==="police"?5000:3000}`);
     if(!r.ok){commOK=false;return}
     const j=await r.json(); commOK=true;
     if(m!==mode||at!==me)return;
     const have=new Set(places.map(p=>p.id));
-    for(const c of (j.places||[])){if(have.has(c.id))continue;places.push({...c,community:true,mine:mine.some(x=>x.id===c.id)})}
+    for(const c of (j.places||[])){if(have.has(c.id))continue;places.push({...c,community:true,mine:mine.some(x=>x.id===c.id)})}}
     const ids=places.map(p=>({id:p.id,d:hav(at.lat,at.lon,p.lat,p.lon)})).sort((a,b)=>a.d-b.d).slice(0,200).map(x=>x.id).filter(id=>/^[nwrc]/.test(String(id)));
     if(ids.length){const v=await api("votes",{ids});Object.assign(votes,v.votes||{})}
     if(m===mode&&at===me)render();
@@ -966,7 +975,7 @@ function initMap(){
   layer=L.layerGroup().addTo(map);
   map.on("click",e=>{ if(pickCb){const f=pickCb;pickCb=null;f(e.latlng.lat,e.latlng.lng);return} if(currentTab==="add"){setAddPin(e.latlng.lat,e.latlng.lng)} });
 }
-function pinIcon(p){if(p.kind==="safe")return L.divIcon({className:"",html:`<div class="pin" style="background:${p.mine?"#7c3aed":staffed(p)?"#581c87":"#a855f7"}"><span>${safeIcon(p)}</span></div>`,iconSize:[30,30],iconAnchor:[15,30]});if(p.kind==="medical")return L.divIcon({className:"",html:`<div class="pin" style="background:${p.mine?"#7c3aed":p.type==="hospital"?"#b91c1c":"#15803d"}"><span>${medIcon(p)}</span></div>`,iconSize:[30,30],iconAnchor:[15,30]});if(p.kind==="police")return L.divIcon({className:"",html:`<div class="pin" style="background:${p.mine?"#7c3aed":"#1d4ed8"}"><span>🚓</span></div>`,iconSize:[30,30],iconAnchor:[15,30]});const col=p.backup?"#d97706":p.mine?"#7c3aed":(p.female==="yes"?"#db2777":"#0f766e");
+function pinIcon(p){if(p.kind==="transit")return L.divIcon({className:"",html:`<div class="pin" style="background:${TR[p.type][2]}"><span>${TR[p.type][0]}</span></div>`,iconSize:[30,30],iconAnchor:[15,30]});if(p.kind==="safe")return L.divIcon({className:"",html:`<div class="pin" style="background:${p.mine?"#7c3aed":staffed(p)?"#581c87":"#a855f7"}"><span>${safeIcon(p)}</span></div>`,iconSize:[30,30],iconAnchor:[15,30]});if(p.kind==="medical")return L.divIcon({className:"",html:`<div class="pin" style="background:${p.mine?"#7c3aed":p.type==="hospital"?"#b91c1c":"#15803d"}"><span>${medIcon(p)}</span></div>`,iconSize:[30,30],iconAnchor:[15,30]});if(p.kind==="police")return L.divIcon({className:"",html:`<div class="pin" style="background:${p.mine?"#7c3aed":"#1d4ed8"}"><span>🚓</span></div>`,iconSize:[30,30],iconAnchor:[15,30]});const col=p.backup?"#d97706":p.mine?"#7c3aed":(p.female==="yes"?"#db2777":"#0f766e");
   return L.divIcon({className:"",html:`<div class="pin" style="background:${col}"><span>${p.backup?(p.kind==="fuel"?"⛽":p.kind==="mall"?"🏬":"🚉"):"🚻"}</span></div>`,iconSize:[30,30],iconAnchor:[15,30]})}
 function setMe(lat,lon,label){
   me={lat,lon,label};
@@ -983,9 +992,10 @@ function namesQuery(lat,lon){
 }
 function buildQuery(mode,lat,lon,backup){
   if(mode==="names")return namesQuery(lat,lon);
-  const R=mode==="police"?5000:mode==="medical"?3000:mode==="safe"?2000:2500;
+  const R=mode==="police"?5000:mode==="medical"||mode==="transit"?3000:mode==="safe"?2000:2500;
   const a=`(around:${R+400},${(Math.round(lat*200)/200).toFixed(3)},${(Math.round(lon*200)/200).toFixed(3)})`;
-  return mode==="safe"?`[out:json][timeout:25];(nwr["amenity"~"^(police|hospital|fuel)$"]${a};nwr["amenity"="pharmacy"]["opening_hours"="24/7"]${a};nwr["railway"="station"]${a};nwr["shop"]["opening_hours"="24/7"]${a};nwr["amenity"~"^(cafe|fast_food|restaurant)$"]["opening_hours"="24/7"]${a};);out center tags 300;`
+  return mode==="transit"?`[out:json][timeout:25];(nwr["railway"~"^(station|halt)$"]${a};nwr["public_transport"="station"]["station"~"^(subway|light_rail|monorail)$"]${a};);out center tags 200;`
+   :mode==="safe"?`[out:json][timeout:25];(nwr["amenity"~"^(police|hospital|fuel)$"]${a};nwr["amenity"="pharmacy"]["opening_hours"="24/7"]${a};nwr["railway"="station"]${a};nwr["shop"]["opening_hours"="24/7"]${a};nwr["amenity"~"^(cafe|fast_food|restaurant)$"]["opening_hours"="24/7"]${a};);out center tags 300;`
    :mode==="medical"?`[out:json][timeout:25];(nwr["amenity"~"^(hospital|clinic|doctors|pharmacy)$"]${a};nwr["healthcare"~"^(hospital|clinic|doctor|pharmacy)$"]${a};nwr["shop"="chemist"]${a};);out center tags 300;`
    :mode==="police"?`[out:json][timeout:25];(nwr["amenity"="police"]${a};);out center tags 200;`
    :`[out:json][timeout:25];(nwr["amenity"="toilets"]${a};${backup?`nwr["amenity"="fuel"]${a};nwr["shop"="mall"]${a};nwr["railway"="station"]${a};`:""});out center tags 200;`;
@@ -1012,6 +1022,15 @@ async function overpass(q){
     const startDirect=()=>{if(directStarted||done)return;directStarted=true;started++;overpassDirect(q).then(ok,bad)};
     viaApi().then(ok,bad); setTimeout(startDirect,10000);
   })}
+const TR={metro:["🚇","Metro","#0e7490"],rail:["🚆","Local train","#c2410c"],mono:["🚝","Monorail","#4d7c0f"]};
+function normTransit(el){const tg=el.tags||{};const lat=el.lat??el.center?.lat, lon=el.lon??el.center?.lon;
+  const all=[tg.station,tg.network,tg.operator,tg.name,tg["name:en"],tg.subway==="yes"?"subway":"",tg.monorail==="yes"?"monorail":""].join(" ");
+  const type=/monorail/i.test(all)?"mono":/subway|light_rail|metro/i.test(all)?"metro":"rail";
+  const skip=tg.disused||tg.abandoned||tg.construction||tg.proposed||tg.usage==="freight"||tg.usage==="military"||/proposed|under construction/i.test(tg.name||"");
+  return skip?null:{id:el.type[0]+el.id,lat,lon,kind:"transit",type,name:tg["name:en"]||tg.name||TR[type][1]+" station",
+    operator:tg.operator||tg.network||"",wheelchair:tg.wheelchair||"",tags:tg}}
+function dedupeTransit(list){const out=[];list.forEach(p=>{if(!p||!p.lat)return;const k=p.name.toLowerCase().replace(/\b(railway|metro|monorail|station|stn)\b|[^a-z0-9ऀ-ॿ]/g,"");
+  if(!out.some(o=>o.type===p.type&&o.name.toLowerCase().replace(/\b(railway|metro|monorail|station|stn)\b|[^a-z0-9ऀ-ॿ]/g,"")===k&&hav(o.lat,o.lon,p.lat,p.lon)<500))out.push(p)});return out}
 function normSafe(el){const tg=el.tags||{};const lat=el.lat??el.center?.lat, lon=el.lon??el.center?.lon;
   const a=tg.amenity||"";
   const type=a==="police"?"police":a==="hospital"?"hospital":a==="fuel"?"fuel":a==="pharmacy"?"pharmacy":tg.railway==="station"?"station":"shop";
@@ -1038,8 +1057,8 @@ function norm(el,backup){const tg=el.tags||{};const lat=el.lat??el.center?.lat, 
     water:tg.drinking_water||"",access:tg.access||"",desc:tg.description||"",tags:tg}}
 async function load(){
   if(!me)return; const at=me, m=mode, t0=Date.now();
-  const st=$("status"), what=m==="safe"?"safe spots":m==="police"?"police stations":m==="medical"?"hospitals & medical stores":"toilets", near=at.label||"you";
-  const R=m==="police"?5000:m==="medical"?3000:m==="safe"?2000:2500;
+  const st=$("status"), what=m==="transit"?"stations":m==="safe"?"safe spots":m==="police"?"police stations":m==="medical"?"hospitals & medical stores":"toilets", near=at.label||"you";
+  const R=m==="police"?5000:m==="medical"||m==="transit"?3000:m==="safe"?2000:2500;
   const ownMine=()=>mine.filter(x=>modeOf(x)===m).map(x=>({...x,mine:true,community:String(x.id)[0]==="c"}));
   const since=t=>{const n=Math.round((Date.now()-t)/60000);return n<1?"just now":n<60?n+" min ago":n<1440?Math.round(n/60)+" h ago":Math.round(n/1440)+" days ago"};
   // 1) Instant: if this phone searched here in the last 3 days, show those results now and refresh in the background.
@@ -1054,7 +1073,7 @@ async function load(){
   const q=buildQuery(m,at.lat,at.lon,filters.has("backup"));
   let live=null;
   try{const j=await overpass(q);
-    live=m==="safe"?j.elements.map(normSafe).filter(p=>p.lat):m==="medical"?j.elements.map(normMed).filter(p=>p.lat):m==="police"?j.elements.map(normPolice).filter(p=>p.lat):j.elements.map(el=>{const tg=el.tags||{};return norm(el,tg.amenity!=="toilets")}).filter(p=>p.lat&&p.access!=="private"&&p.access!=="no");
+    live=m==="transit"?dedupeTransit(j.elements.map(normTransit)):m==="safe"?j.elements.map(normSafe).filter(p=>p.lat):m==="medical"?j.elements.map(normMed).filter(p=>p.lat):m==="police"?j.elements.map(normPolice).filter(p=>p.lat):j.elements.map(el=>{const tg=el.tags||{};return norm(el,tg.amenity!=="toilets")}).filter(p=>p.lat&&p.access!=="private"&&p.access!=="no");
     live=live.filter(p=>hav(at.lat,at.lon,p.lat,p.lon)<=R);
     store.set("cache_"+m,{at:Date.now(),me:{lat:at.lat,lon:at.lon,label:at.label},live});
   }catch(e){
@@ -1117,6 +1136,10 @@ async function nameToilets(at,tries=0){
 
 /* ---------- filtering & ranking ---------- */
 function matches(p){
+  if(mode==="transit"){if(p.kind!=="transit")return false;
+    const types=["metro","rail","mono"].filter(x=>trF.has(x)); if(types.length&&!types.includes(p.type))return false;
+    if(trF.has("access")&&p.wheelchair!=="yes")return false; return true}
+  if(p.kind==="transit")return false;
   if(mode==="safe"){if(p.kind!=="safe")return false;
     if(safeF.has("staffed")&&!staffed(p))return false;
     if(safeF.has("h24")&&p.hours!=="24/7")return false; return true}
@@ -1148,7 +1171,7 @@ function commFactor(p){const hf=(p.kind==="safe"&&me&&pathNearHazard(me,p))?1.6:
 function learnedClosedNow(p){const a=votes[p.id];if(!a)return false;return nightNow()?((a.cn||{}).closed||0)>=2:((a.cd||{}).closed||0)>=2}
 function ownScore(p){
   let d=p.dist; const rep=reports[p.id]||{};
-  if(p.kind==="medical"){if(rep.closed||rep.wrong)d*=3; return d}
+  if(p.kind==="medical"||p.kind==="transit"){if(rep.closed||rep.wrong)d*=3; return d}
   if(p.kind==="safe"){d*=(SAFE[p.type]||SAFE.other)[2]; if(p.type==="hospital"&&p.big===false)d*=1.4; if(p.hours==="24/7"&&!staffed(p))d*=.85; if(p.lit)d*=.9; if(rep.closed)d*=3; if(rep.unsafe||rep.dark)d*=3; if(rep.good)d*=.8; return d}
   if(p.kind==="police"){if(p.chowki)d*=1.1; if(rep.closed||rep.wrong)d*=3; return d}
   if(p.backup)d*=1.6;
@@ -1173,6 +1196,9 @@ function commTags(p){const o=[];{const a=votes[p.id]||{},nv=a.nav||{};
   return o.join("")}
 function tagsHTML(p){return baseTags(p)+commTags(p)}
 function baseTags(p){const o=[];
+  if(p.kind==="transit"){const r=reports[p.id]||{};o.push(`<span class="tag ${p.type==="metro"?"b":p.type==="mono"?"g":""}">${TR[p.type][0]} ${TR[p.type][1]}</span>`);
+    if(p.wheelchair==="yes")o.push(`<span class="tag b">♿ Accessible</span>`);else if(p.wheelchair==="limited")o.push(`<span class="tag">♿ Limited</span>`);
+    if(r.closed)o.push(`<span class="tag r">Reported closed</span>`);if(r.wrong)o.push(`<span class="tag r">Reported wrong place</span>`);return o.join("")}
   if(p.kind==="safe"){const r=reports[p.id]||{};if(p.mine)o.push(`<span class="tag b">Added by you</span>`);o.push(`<span class="tag ${staffed(p)?"b":""}">${safeIcon(p)} ${safeLabel(p)}</span>`);
     if(staffed(p))o.push(`<span class="tag g">Staffed 24 hrs</span>`);else if(p.hours==="24/7")o.push(`<span class="tag g">Open 24 hrs</span>`);else if(p.hours)o.push(`<span class="tag">⏰ ${esc(p.hours)}</span>`);else o.push(`<span class="tag">Night hours unknown</span>`);
     if(p.lit)o.push(`<span class="tag g">💡 Well lit</span>`);if(r.good)o.push(`<span class="tag g">👍 Felt safe (you)</span>`);if(r.closed)o.push(`<span class="tag r">Found closed</span>`);if(r.dark)o.push(`<span class="tag r">Dark / deserted</span>`);if(r.unsafe)o.push(`<span class="tag r">Felt unsafe</span>`);return o.join("")}
@@ -1192,7 +1218,7 @@ function baseTags(p){const o=[];
   return o.join("");}
 
 function itemHTML(p){return `<div class="item" data-id="${p.id}">
-  <div class="ic ${p.backup?"bk":""}">${p.kind==="safe"?safeIcon(p):p.kind==="medical"?medIcon(p):p.kind==="police"?"🚓":p.backup?(p.kind==="fuel"?"⛽":p.kind==="mall"?"🏬":"🚉"):"🚻"}</div>
+  <div class="ic ${p.backup?"bk":""}">${p.kind==="transit"?TR[p.type][0]:p.kind==="safe"?safeIcon(p):p.kind==="medical"?medIcon(p):p.kind==="police"?"🚓":p.backup?(p.kind==="fuel"?"⛽":p.kind==="mall"?"🏬":"🚉"):"🚻"}</div>
   <div style="flex:1;min-width:0"><h3>${esc(p.name)}</h3>${p.operator?`<div class="meta">${esc(p.operator)}</div>`:""}<div class="tags">${tagsHTML(p)}</div></div>
   ${p.dist!=null?`<div class="dist">${fmtD(p.dist)}<small>${walkMin(p.dist)} ${t("walk")}</small></div>`:""}</div>`}
 
@@ -1200,8 +1226,8 @@ function render(){
   const v=visible(), list=$("list"), st=$("status");
   if(layer){layer.clearLayers(); v.slice(0,120).forEach(p=>L.marker([p.lat,p.lon],{icon:pinIcon(p)}).on("click",()=>openDetail(p)).addTo(layer));if(mode==="safe")drawHazards()}
   if(!me){st.textContent="Choose your area or tap “My location”.";list.innerHTML="";renderSaved();return}
-  st.textContent=v.length?`${v.length} ${mode==="safe"?"safe spots within 2":mode==="police"?"police stations within 5":mode==="medical"?"hospitals & medical stores within 3":"places within 2.5"} km of ${me.label||"you"} · best match first`:"";
-  list.innerHTML=v.length?v.slice(0,60).map(itemHTML).join(""):mode==="safe"?`<div class="empty">No safe spots found with these filters nearby.<br><b>In danger? Call 112 now.</b><br>Try removing a filter, or add a place you know from “+ Add”.</div>`:mode==="medical"?`<div class="empty">Nothing found with these filters nearby.<br><b>Medical emergency? Call 108 for an ambulance.</b><br>Try removing a filter, or add a place you know from “+ Add”.</div>`:mode==="police"?`<div class="empty">No police station found on the map nearby.<br><b>In danger? Call 112 now.</b><br>Know one? Add it from “+ Add”.</div>`:`<div class="empty">No toilets match these filters nearby.<br>Try removing a filter or turn on “⛽ Show backups” (petrol pumps, malls, stations).</div>`;
+  st.textContent=v.length?`${v.length} ${mode==="transit"?"stations within 3":mode==="safe"?"safe spots within 2":mode==="police"?"police stations within 5":mode==="medical"?"hospitals & medical stores within 3":"places within 2.5"} km of ${me.label||"you"} · best match first`:"";
+  list.innerHTML=v.length?v.slice(0,60).map(itemHTML).join(""):mode==="transit"?`<div class="empty">No metro or train station found within 3 km with these filters.<br>Try removing a filter, or choose another area.</div>`:mode==="safe"?`<div class="empty">No safe spots found with these filters nearby.<br><b>In danger? Call 112 now.</b><br>Try removing a filter, or add a place you know from “+ Add”.</div>`:mode==="medical"?`<div class="empty">Nothing found with these filters nearby.<br><b>Medical emergency? Call 108 for an ambulance.</b><br>Try removing a filter, or add a place you know from “+ Add”.</div>`:mode==="police"?`<div class="empty">No police station found on the map nearby.<br><b>In danger? Call 112 now.</b><br>Know one? Add it from “+ Add”.</div>`:`<div class="empty">No toilets match these filters nearby.<br>Try removing a filter or turn on “⛽ Show backups” (petrol pumps, malls, stations).</div>`;
   list.querySelectorAll(".item").forEach(el=>el.onclick=()=>openDetail(v.find(p=>p.id===el.dataset.id)));
   renderSaved();
 }
@@ -1215,6 +1241,7 @@ $("sheet").onclick=e=>{if(e.target.id==="sheet")$("sheet").classList.remove("sho
 
 function openDetail(p){
   if(!p)return;
+  if(p.kind==="transit")return openTransit(p);
   if(p.kind==="police")return openPolice(p);
   if(p.kind==="medical")return openMed(p);
   if(p.kind==="safe")return openSafe(p); if(me&&p.dist==null)p.dist=hav(me.lat,me.lon,p.lat,p.lon);
@@ -1298,6 +1325,39 @@ function openMed(p){
   $("sheetBox").querySelectorAll("[data-r]").forEach(b=>b.onclick=()=>{const k=b.dataset.r;reports[p.id]=reports[p.id]||{};reports[p.id][k]=!reports[p.id][k];store.set("reports",reports);sendVote(p.id);openMed(p);render()});
   if(p.mine)$("dDel").onclick=()=>{const i=mine.findIndex(m=>m.id===p.id);if(i>-1)mine.splice(i,1);if(String(p.id)[0]==="c")api("delete",{id:p.id}).catch(()=>{});store.set("mine",mine);delete saved[p.id];store.set("saved",saved);$("sheet").classList.remove("show");places=places.filter(x=>x.id!==p.id);render()};
 }
+function openTransit(p){
+  if(!p)return; if(me&&p.dist==null)p.dist=hav(me.lat,me.lon,p.lat,p.lon);
+  const r=reports[p.id]||{}, isSaved=!!saved[p.id];
+  sheet(`<h2>${TR[p.type][0]} ${esc(p.name)}</h2>
+   ${p.dist!=null?`<div class="meta">${fmtD(p.dist)} · ~${walkMin(p.dist)} ${t("walk")}</div>`:""}
+   ${p.operator?`<div class="meta">${esc(p.operator)}</div>`:""}
+   <div class="tags">${tagsHTML(p)}</div>
+   <a class="btn pri" style="background:${TR[p.type][2]}" href="${dirURL(p)}" target="_blank" rel="noopener">🚶 Walk there</a>
+   <a class="btn out" href="${dirURL(p).replace("walking","driving")}" target="_blank" rel="noopener">🛺 Auto / car</a>
+   <div class="grid2"><button class="btn out" id="dSave">${isSaved?"★ Saved":"☆ Save"}</button><button class="btn out" id="dShare">📤 Share</button></div>
+   <div class="sec">Report a problem</div>
+   <div class="rep">${[["closed","🔒 Closed / not working"],["wrong","📍 Wrong location"]].map(([k,l])=>`<button class="chip ${r[k]?"on":""}" data-r="${k}">${l}</button>`).join("")}</div>
+   <div class="meta" style="margin-top:8px">Station data comes from OpenStreetMap. Check train times in the station or your usual app.</div>
+   <a class="btn out" href="https://www.openstreetmap.org/${{n:"node",w:"way",r:"relation"}[p.id[0]]}/${p.id.slice(1)}" target="_blank" rel="noopener">✏️ Fix details on OpenStreetMap</a>`);
+  $("dSave").onclick=()=>{if(saved[p.id])delete saved[p.id];else saved[p.id]={...p,dist:undefined};store.set("saved",saved);openTransit(p);renderSaved()};
+  $("dShare").onclick=()=>copy(`${p.name} – ${TR[p.type][1]} station: https://maps.google.com/?q=${p.lat},${p.lon}`);
+  $("sheetBox").querySelectorAll("[data-r]").forEach(b=>b.onclick=()=>{const k=b.dataset.r;reports[p.id]=reports[p.id]||{};reports[p.id][k]=!reports[p.id][k];store.set("reports",reports);sendVote(p.id);openTransit(p);render()});
+}
+function emergencyTransit(){
+  const v=visible().filter(p=>!(reports[p.id]||{}).closed), best=v[0];
+  if(!best){sheet(`<h2>🚇 ${t("near_t")}</h2><div class="empty">No metro or train station found within 3 km. Try another area, or remove a filter.</div>`);return}
+  const other=v.find(p=>p.type!==best.type&&p.type!=="mono"&&best.type!=="mono")||null, alts=v.filter(p=>p!==best&&p!==other).slice(0,2), col=TR[best.type][2];
+  sheet(`<h2>🚇 ${t("near_t")}</h2>
+   <div class="big-card" style="border-color:${col}"><div class="d" style="color:${col}">${fmtD(best.dist)}</div><div><b>${TR[best.type][0]} ${esc(best.name)}</b> · ~${walkMin(best.dist)} ${t("walk")}</div>
+     ${best.operator?`<div class="meta">${esc(best.operator)}</div>`:""}<div class="tags">${tagsHTML(best)}</div>
+     <a class="btn pri" style="background:${col}" href="${dirURL(best)}" target="_blank" rel="noopener">🚶 Walk there now</a></div>
+   ${other?`<div class="sec">Nearest ${TR[other.type][1].toLowerCase()} station</div>`+itemHTML(other):""}
+   ${alts.length?`<div class="sec">Other close stations</div>`+alts.map(itemHTML).join(""):""}
+   <button class="btn out" id="eSos">Not safe / need help? SOS</button>`);
+  const list=[other,...alts].filter(Boolean);
+  $("sheetBox").querySelectorAll(".item").forEach(el=>el.onclick=()=>openTransit(list.find(p=>p.id===el.dataset.id)));
+  $("eSos").onclick=sos;
+}
 function openPolice(p){
   if(!p)return; if(me&&p.dist==null)p.dist=hav(me.lat,me.lon,p.lat,p.lon);
   const r=reports[p.id]||{}, isSaved=!!saved[p.id];
@@ -1331,6 +1391,7 @@ function emergency(){
 function showEmergency(){
   if(mode==="police")return emergencyPolice();
   if(mode==="medical")return emergencyMed();
+  if(mode==="transit")return emergencyTransit();
   if(mode==="safe")return emergencySafe();
   const v=visible().filter(p=>!(reports[p.id]||{}).closed);
   const best=v.find(p=>!p.backup)||v[0];
@@ -1421,6 +1482,7 @@ $("p-info").innerHTML=`
  <div class="tip"><b>🧭 Route, 🏠 Home & ⚠️ reports:</b> use the Route tab to check a regular walk. Tap 🏠 at the top to get home or show your address to a driver. In Safe spot mode, report dark or unsafe lanes so others are warned.</div>
  <div class="tip"><b>🌙 Safe spot:</b> late at night and feeling unsafe? Shows the nearest places that are usually open or staffed all night: police chowkis, hospitals, petrol pumps, 24-hr chemists and shops. Police and hospitals rank first. One tap to call 112 or 1091, or to send your location to family. Rate places after visiting to help yourself next time.</div>
  <div class="tip"><b>🏥 Medical mode:</b> find the nearest hospital, clinic or medical store. Filter by 24 hrs or casualty/emergency, call 108 for an ambulance, or call the place directly. Missing one? Add it from “+ Add”.</div>
+ <div class="tip"><b>🚇 Transport:</b> find the nearest metro, local train or monorail station, with walking directions. Filter by type or ♿ accessible. Tap “Nearest station NOW” for the closest one in one tap.</div>
  <div class="tip"><b>🚓 Police mode:</b> switch at the top to find the nearest police station or chowki, call it in one tap, or call 112. Missing one? Add it from “+ Add”.</div>
  <div class="tip"><b>No toilet nearby?</b> Petrol pumps, railway & metro stations, malls, hospitals and big restaurants are usually your best bet. Turn on “⛽ Show backups”.</div>
  <div class="tip"><b>For elders:</b> tap <b>A+</b> for large text. Save regular places with ⭐ so they're one tap away.</div>
@@ -1429,7 +1491,7 @@ $("p-info").innerHTML=`
 
 /* ---------- wiring ---------- */
 let currentTab="list";
-document.querySelectorAll(".tabs button").forEach(b=>b.onclick=()=>{currentTab=b.dataset.tab;document.querySelectorAll(".tabs button").forEach(x=>x.classList.toggle("on",x===b));document.querySelectorAll(".pane").forEach(p=>p.classList.toggle("on",p.id==="p-"+currentTab));if(currentTab==="add")toast("Tap on the map to place the "+(mode==="safe"?"safe spot":mode==="police"?"police station":mode==="medical"?"hospital / medical store":"toilet"))});
+document.querySelectorAll(".tabs button").forEach(b=>b.onclick=()=>{currentTab=b.dataset.tab;document.querySelectorAll(".tabs button").forEach(x=>x.classList.toggle("on",x===b));document.querySelectorAll(".pane").forEach(p=>p.classList.toggle("on",p.id==="p-"+currentTab));if(currentTab==="add"&&mode!=="transit")toast("Tap on the map to place the "+(mode==="safe"?"safe spot":mode==="police"?"police station":mode==="medical"?"hospital / medical store":"toilet"))});
 function syncChips(){document.querySelectorAll("#chips .chip").forEach(c=>c.classList.toggle("on",filters.has(c.dataset.f)));updFilt()}
 function updFilt(){const n=mode==="medical"?medF.size:mode==="toilet"||!mode?filters.size+(who&&who!=="any"&&!(who==="woman"&&filters.has("women"))?1:0):0;
   const c=$("fCount");c.textContent=n;c.classList.toggle("show",n>0)}
@@ -1448,14 +1510,15 @@ $("sosBtn").onclick=sos;
 $("bigBtn").onclick=()=>{document.body.classList.toggle("big");store.set("big",document.body.classList.contains("big"));setTimeout(()=>map&&map.invalidateSize(),200)};
 $("langBtn").onclick=()=>{lang={en:"hi",hi:"mr",mr:"en"}[lang];store.set("lang",lang);applyLang();render()};
 
-function setMode(m){mode=m;store.set("mode",m);document.body.classList.toggle("police",m==="police");document.body.classList.toggle("medical",m==="medical");document.body.classList.toggle("safe",m==="safe");
+function setMode(m){mode=m;store.set("mode",m);document.body.classList.toggle("police",m==="police");document.body.classList.toggle("medical",m==="medical");document.body.classList.toggle("safe",m==="safe");document.body.classList.toggle("transit",m==="transit");
   document.querySelectorAll("#modes button").forEach(b=>b.classList.toggle("on",b.dataset.mode===m));
-  $("addTip").textContent=m==="safe"?"Know a place that stays open and busy at night (a 24-hr shop, petrol pump, chowki)? Tap the map to drop a pin, pick the type and save. It's shared with everyone using SafeStop.":m==="medical"?"Know a hospital, clinic or medical store that isn't listed? Tap the map to drop a pin (or use your current spot), choose the type, add a phone and save. It's shared with everyone using SafeStop.":m==="police"?"Know a police station or chowki that isn't listed? Tap the map to drop a pin (or use your current spot), add its name and phone, and save. It's shared with everyone using SafeStop.":t("add_tip");
+  $("addTip").textContent=m==="transit"?"Stations come from OpenStreetMap, the free community map. If one is missing or in the wrong place, open a nearby station and tap “Fix details on OpenStreetMap”, or tap “Wrong location” to warn others.":m==="safe"?"Know a place that stays open and busy at night (a 24-hr shop, petrol pump, chowki)? Tap the map to drop a pin, pick the type and save. It's shared with everyone using SafeStop.":m==="medical"?"Know a hospital, clinic or medical store that isn't listed? Tap the map to drop a pin (or use your current spot), choose the type, add a phone and save. It's shared with everyone using SafeStop.":m==="police"?"Know a police station or chowki that isn't listed? Tap the map to drop a pin (or use your current spot), add its name and phone, and save. It's shared with everyone using SafeStop.":t("add_tip");
   $("saveBtn").textContent=m==="safe"?"Save safe spot":m==="police"?"Save police station":m==="medical"?"Save place":"Save toilet";
-  try{document.querySelector('meta[name=theme-color]').setAttribute("content",m==="safe"?"#581c87":m==="police"?"#1e3a8a":m==="medical"?"#166534":"#0f766e")}catch(e){}
+  try{document.querySelector('meta[name=theme-color]').setAttribute("content",m==="transit"?"#9a3412":m==="safe"?"#581c87":m==="police"?"#1e3a8a":m==="medical"?"#166534":"#0f766e")}catch(e){}
   applyLang(); updFilt(); if(me)load(); else render();}
 document.querySelectorAll("#modes button").forEach(b=>b.onclick=()=>setMode(b.dataset.mode));
 document.querySelectorAll("#safeChips .chip").forEach(c=>c.onclick=()=>{const f=c.dataset.s;safeF.has(f)?safeF.delete(f):safeF.add(f);c.classList.toggle("on",safeF.has(f));render()});
+document.querySelectorAll("#trChips .chip").forEach(c=>c.onclick=()=>{const f=c.dataset.tr;trF.has(f)?trF.delete(f):trF.add(f);c.classList.toggle("on",trF.has(f));render()});
 document.querySelectorAll("#medChips .chip").forEach(c=>c.onclick=()=>{const f=c.dataset.m;medF.has(f)?medF.delete(f):medF.add(f);c.classList.toggle("on",medF.has(f));render()});
 /* =====================================================================
    v5: unsafe-spot reports · safe route · take me home · emergency contacts
