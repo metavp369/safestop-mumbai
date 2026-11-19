@@ -17,7 +17,7 @@ const TYPES = {
 const HAZARD_NAMES = { dark: "Dark lane / no lights", streetlight: "Broken streetlight", harassment: "Harassment reported", deserted: "Deserted at night", other: "Feels unsafe" };
 const HAZARD_MAX_AGE = 180 * 24 * 3600 * 1000; // reports fade after ~6 months
 const FLAGS = ["closed", "dirty", "nowater", "unsafe", "wrong", "dark", "good", "confirm", "fixed"];
-const { BOXES } = require("../lib/areas.js"); // Mumbai region, Delhi, Gurgaon
+const { BOXES } = require("../lib/areas.js"); // Mumbai region, Delhi, Gurgaon, Jaipur
 const LIMITS = { add: 15, vote: 300, delete: 30, read: 600, nav: 200 }; // per IP per hour
 const DAY = 86400000, VOTE_MAX_AGE = 180 * DAY, HALF_LIFE = 45 * DAY;
 const isNight = (h) => h >= 19 || h < 6;
@@ -37,7 +37,7 @@ async function rateLimit(ip, action) {
 
 function cleanPlace(p, mode) {
   const lat = num(p.lat), lon = num(p.lon);
-  if (!isFinite(lat) || !isFinite(lon) || !inBox(lat, lon)) throw new Error("Location must be in Mumbai, Delhi or Gurgaon");
+  if (!isFinite(lat) || !isFinite(lon) || !inBox(lat, lon)) throw new Error("Location must be in Mumbai, Delhi, Gurgaon or Jaipur");
   if (mode === "hazard") p = { ...p, name: HAZARD_NAMES[str(p.type, 20)] || "Unsafe spot" };
   const name = str(p.name, 80);
   if (name.length < 2) throw new Error("Name is required");
