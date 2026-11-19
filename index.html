@@ -892,7 +892,7 @@ mr:{app:"सेफस्टॉप मुंबई",t_route:"मार्ग",m_s
  add_tip:"यादीत नसलेले शौचालय माहीत आहे? नकाशावर टॅप करून पिन लावा, माहिती भरा आणि सेव्ह करा. हे सर्व SafeStop वापरकर्त्यांना दिसेल."}};
 let lang=store.get("lang","en");
 const t=k=>(T[lang]&&T[lang][k])||T.en[k]||k;
-function applyLang(){const et=document.getElementById('emgTxt');if(et)et.textContent=mode==='police'?t('emg_p'):mode==='medical'?t('emg_m'):mode==='safe'?t('emg_s'):t('emg');document.querySelectorAll("[data-t]").forEach(el=>{el.textContent=t(el.dataset.t)});document.documentElement.lang=lang}
+function applyLang(){try{places.forEach(p=>{if(p.where)p.name=autoName(p)})}catch(e){}const et=document.getElementById('emgTxt');if(et)et.textContent=mode==='police'?t('emg_p'):mode==='medical'?t('emg_m'):mode==='safe'?t('emg_s'):t('emg');document.querySelectorAll("[data-t]").forEach(el=>{el.textContent=t(el.dataset.t)});document.documentElement.lang=lang}
 
 /* ---------- areas ---------- */
 const AREAS=[["CSMT / Fort",18.9400,72.8353],["Colaba",18.9067,72.8147],["Marine Drive / Churchgate",18.9440,72.8235],["Lower Parel",18.9953,72.8302],["Dadar",19.0178,72.8478],["Sion",19.0390,72.8619],["Bandra",19.0596,72.8295],["Kurla",19.0726,72.8845],["Chembur",19.0522,72.9005],["Ghatkopar",19.0860,72.9081],["Vile Parle",19.0990,72.8492],["Juhu",19.1075,72.8263],["Andheri",19.1197,72.8468],["Powai",19.1176,72.9060],["Goregaon",19.1663,72.8526],["Malad",19.1874,72.8484],["Mulund",19.1726,72.9425],["Borivali",19.2307,72.8567],["Thane",19.2183,72.9781],["Vashi",19.0771,72.9986]];
@@ -976,7 +976,13 @@ function setMe(lat,lon,label){
 
 /* ---------- data: OpenStreetMap via Overpass ---------- */
 const ENDPOINTS=["https://overpass-api.de/api/interpreter","https://overpass.private.coffee/api/interpreter","https://maps.mail.ru/osm/tools/overpass/api/interpreter","https://overpass.kumi.systems/api/interpreter"];
+function namesQuery(lat,lon){
+  // Streets, stations and landmarks close to each toilet, used to give unnamed toilets a useful name.
+  const a=`(around:2900,${(Math.round(lat*200)/200).toFixed(3)},${(Math.round(lon*200)/200).toFixed(3)})`;
+  return `[out:json][timeout:25];nwr["amenity"="toilets"]${a}->.t;way(around.t:90)["highway"]["name"]["highway"!~"^(footway|path|steps|corridor|platform|cycleway|bridleway|proposed|construction)$"];out tags geom 400;(nwr(around.t:450)["railway"~"^(station|halt)$"]["name"];nwr(around.t:130)["amenity"~"^(bus_station|marketplace|place_of_worship|hospital|college|university|cinema|police|post_office|townhall)$"]["name"];nwr(around.t:130)["shop"="mall"]["name"];nwr(around.t:130)["leisure"~"^(park|stadium)$"]["name"];nwr(around.t:130)["tourism"~"^(attraction|museum)$"]["name"];node(around.t:1500)["place"~"^(suburb|neighbourhood|quarter)$"]["name"];);out center tags 400;`;
+}
 function buildQuery(mode,lat,lon,backup){
+  if(mode==="names")return namesQuery(lat,lon);
   const R=mode==="police"?5000:mode==="medical"?3000:mode==="safe"?2000:2500;
   const a=`(around:${R+400},${(Math.round(lat*200)/200).toFixed(3)},${(Math.round(lon*200)/200).toFixed(3)})`;
   return mode==="safe"?`[out:json][timeout:25];(nwr["amenity"~"^(police|hospital|fuel)$"]${a};nwr["amenity"="pharmacy"]["opening_hours"="24/7"]${a};nwr["railway"="station"]${a};nwr["shop"]["opening_hours"="24/7"]${a};nwr["amenity"~"^(cafe|fast_food|restaurant)$"]["opening_hours"="24/7"]${a};);out center tags 300;`
@@ -1024,7 +1030,7 @@ function normPolice(el){const tg=el.tags||{};const lat=el.lat??el.center?.lat, l
   return {id:el.type[0]+el.id,lat,lon,kind:"police",name:nm,operator:tg.operator||"",phone:tg.phone||tg["contact:phone"]||"",hours:tg.opening_hours||"",chowki:/chowk|chauk|beat|outpost|booth/i.test(nm)||/booth|checkpoint/.test(tg.police||""),desc:tg.description||"",tags:tg}}
 function norm(el,backup){const tg=el.tags||{};const lat=el.lat??el.center?.lat, lon=el.lon??el.center?.lon;
   let kind="toilet"; if(backup){kind=tg.amenity==="fuel"?"fuel":tg.shop==="mall"?"mall":"station"}
-  return {id:el.type[0]+el.id,lat,lon,backup,kind,
+  return {id:el.type[0]+el.id,lat,lon,backup,kind,auto:!backup&&!tg.name&&!tg["name:en"],
     name:tg.name||tg["name:en"]||(backup?(kind==="fuel"?"Petrol pump":kind==="mall"?"Mall":"Railway station"):(tg.operator?tg.operator+" toilet":"Public toilet")),
     female:tg.female||(tg.unisex==="yes"?"yes":""),male:tg.male||"",unisex:tg.unisex||"",wheelchair:tg.wheelchair||tg["toilets:wheelchair"]||"",
     baby:tg.changing_table||tg.diaper||"",fee:tg.fee||"",charge:tg.charge||"",hours:tg.opening_hours||"",
@@ -1039,7 +1045,7 @@ async function load(){
   // 1) Instant: if this phone searched here in the last 3 days, show those results now and refresh in the background.
   const c=store.get("cache_"+m,null);
   const stale=c&&c.live&&c.me&&hav(c.me.lat,c.me.lon,at.lat,at.lon)<800&&Date.now()-c.at<3*864e5?c:null;
-  if(stale){places=stale.live.concat(ownMine());render();loadCommunity()}
+  if(stale){places=stale.live.concat(ownMine());if(m==="toilet")places.forEach(p=>{if(p.where)p.name=autoName(p)});render();loadCommunity()}
   const say=()=>{const s=Math.round((Date.now()-t0)/1000);
     st.textContent=stale?`Showing ${what} saved ${since(stale.at)} · updating… ${s}s`
       :s<9?`Searching ${what} near ${near}… ${s}s`:`Still searching (${s}s)… the free map data server is busy right now. In an emergency, use SOS.`};
@@ -1061,6 +1067,50 @@ async function load(){
   places=live.concat(ownMine());
   render();
   loadCommunity();
+  if(m==="toilet")nameToilets(at);
+}
+
+/* ---------- names for unnamed toilets ("Toilet near Andheri Stn", "Toilet on SV Road") ---------- */
+const WHERE_T={
+  en:{toilet:"Toilet",stn:" Stn",metro:" Metro",f:(b,r,x)=>`${b} ${r==="on"?"on":r==="in"?"in":"near"} ${x}`},
+  hi:{toilet:"शौचालय",stn:" स्टेशन",metro:" मेट्रो",f:(b,r,x)=>`${x} ${r==="on"?"पर":r==="in"?"में":"के पास"} ${b}`},
+  mr:{toilet:"शौचालय",stn:" स्टेशन",metro:" मेट्रो",f:(b,r,x)=>`${x} ${r==="on"?"वर":r==="in"?"मध्ये":"जवळ"} ${b}`}};
+function autoName(p){const w=p.where; if(!w)return p.name; const L=WHERE_T[lang]||WHERE_T.en;
+  let x=(lang==="en"?w.n.en:lang==="hi"?w.n.hi:w.n.mr)||w.n.name||w.n.en;
+  if(w.stn){x=x.replace(/\s*(railway|rly\.?|metro|mono ?rail)?\s*station$/i,"");if(!/(स्टेशन|stn|station)/i.test(x))x+=w.stn==="metro"?L.metro:L.stn}
+  if(x.length>36)x=x.slice(0,34).trim()+"…";
+  const base=p.operator&&p.operator.length<=20?p.operator+(lang==="en"?" toilet":" "+L.toilet):L.toilet;
+  return L.f(base,w.rel,x)}
+const namesCache={};
+async function nameToilets(at){
+  places.forEach(p=>{if(p.where)p.name=autoName(p)});
+  const need=places.filter(p=>p.auto&&!p.where&&!p.mine);
+  if(!need.length)return;
+  const q=buildQuery("names",at.lat,at.lon);
+  let j; try{j=await(namesCache[q]||(namesCache[q]=overpass(q)))}catch(e){delete namesCache[q];return}
+  const els=(j&&j.elements)||[]; if(!els.length)return;
+  const ky=110540, kx=111320*Math.cos(at.lat*Math.PI/180);
+  const nm=tg=>({name:tg.name||"",en:tg["name:en"]||"",hi:tg["name:hi"]||"",mr:tg["name:mr"]||""});
+  const roads=[], stns=[], marks=[], areas=[];
+  els.forEach(e=>{const tg=e.tags||{}; if(!tg.name&&!tg["name:en"])return;
+    if(e.geometry){roads.push({pts:e.geometry.map(g=>[g.lon*kx,g.lat*ky]),n:nm(tg)});return}
+    const la=e.lat??e.center?.lat, lo=e.lon??e.center?.lon; if(la==null)return;
+    const o={x:lo*kx,y:la*ky,n:nm(tg)};
+    if(tg.place)areas.push(o); else if(tg.railway==="station"||tg.railway==="halt"){o.stn=/subway|metro|monorail/.test((tg.station||"")+(tg.network||"").toLowerCase())||/metro/i.test(tg.name)?"metro":"rail";stns.push(o)} else marks.push(o)});
+  const segD=(px,py,[ax,ay],[bx,by])=>{const dx=bx-ax,dy=by-ay,l=dx*dx+dy*dy;let u=l?((px-ax)*dx+(py-ay)*dy)/l:0;u=Math.max(0,Math.min(1,u));return Math.hypot(px-ax-u*dx,py-ay-u*dy)};
+  const near=(list,px,py)=>{let b=null,bd=1e9;list.forEach(o=>{const d=Math.hypot(o.x-px,o.y-py);if(d<bd){bd=d;b=o}});return [b,bd]};
+  let changed=0;
+  need.forEach(p=>{const px=p.lon*kx, py=p.lat*ky;
+    let road=null,rd=1e9; roads.forEach(r=>{for(let i=1;i<r.pts.length;i++){const d=segD(px,py,r.pts[i-1],r.pts[i]);if(d<rd){rd=d;road=r}}});
+    const [st,sd]=near(stns,px,py), [lm,ld]=near(marks,px,py), [ar,ad]=near(areas,px,py);
+    const w=st&&sd<=300?{rel:"near",n:st.n,stn:st.stn}:road&&rd<=35?{rel:"on",n:road.n}:lm&&ld<=120?{rel:"near",n:lm.n}
+      :road&&rd<=90?{rel:"near",n:road.n}:st&&sd<=450?{rel:"near",n:st.n,stn:st.stn}:ar&&ad<=1500?{rel:"in",n:ar.n}:null;
+    if(w){p.where=w;p.name=autoName(p);changed++}});
+  if(!changed)return;
+  render();
+  // remember the names with this phone's saved results, so they show instantly next time
+  try{const c=store.get("cache_toilet",null);if(c&&c.live&&c.me&&hav(c.me.lat,c.me.lon,at.lat,at.lon)<50){const by={};places.forEach(p=>{if(p.where)by[p.id]=p});
+    c.live=c.live.map(x=>by[x.id]?{...x,where:by[x.id].where,name:by[x.id].name}:x);store.set("cache_toilet",c)}}catch(e){}
 }
 
 /* ---------- filtering & ranking ---------- */

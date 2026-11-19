@@ -26,7 +26,8 @@ async function redis(cmds) { if (!connected()) return cmds.map(() => null); try 
 // Only the kinds of queries the app itself makes: JSON output, "around" searches, read-only.
 function allowed(q) {
   return typeof q === "string" && q.length <= 6000 && q.startsWith("[out:json]") && q.includes("around:") &&
-    /^[\[\]\(\)\w:;"=~^|$.,\s\-!]+$/.test(q) && !/\b(out\s+(body|geom|meta|skel))\b/.test(q);
+    /^[\[\]\(\)\w:;"=~^|$.,\s\-!>/]+$/.test(q) && !/\b(out\s+(body|meta|skel))\b/.test(q) &&
+    !/\bout\s+geom\b/.test(q) && (!/\bgeom\b/.test(q) || /out tags geom \d+;/.test(q)); // "out tags geom" only for street names
 }
 
 // Ask every server at once and use the first good answer (then cancel the rest).

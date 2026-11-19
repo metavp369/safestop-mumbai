@@ -52,7 +52,7 @@ async function cleanMode(mode, log) {
 async function prewarm(deadline, log) {
   // toilets first (the report needs them), then the other modes; rotates through all areas over several nights
   const combos = [];
-  ["toilet", "safe", "medical", "police"].forEach((m) => AREAS.forEach((a) => combos.push([m, a[1], a[2]])));
+  ["toilet", "names", "safe", "medical", "police"].forEach((m) => AREAS.forEach((a) => combos.push([m, a[1], a[2]])));
   const [cur] = await redis([["GET", "nightly:cursor"]]);
   let i = parseInt(cur || "0", 10) || 0, done = 0, fails = 0;
   while (Date.now() < deadline - 3000 && done < combos.length && fails < 3) {
