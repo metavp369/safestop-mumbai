@@ -683,9 +683,17 @@ header .hb{background:rgba(255,255,255,.16);border-radius:8px;padding:6px 10px;f
 .banner.show{display:block}
 .top{padding:10px 12px;background:#fff;border-bottom:1px solid var(--line)}
 .sos-row{display:flex;gap:8px}
-.emg{flex:1;background:var(--red);color:#fff;font-weight:700;font-size:1.15em;padding:16px 12px;border-radius:14px;box-shadow:0 4px 14px rgba(220,38,38,.35);display:flex;align-items:center;justify-content:center;gap:8px}
+.emg{flex:1;background:var(--teal);color:#fff;font-weight:700;font-size:1.15em;padding:16px 12px;border-radius:14px;box-shadow:0 4px 14px rgba(15,118,110,.3);display:flex;align-items:center;justify-content:center;gap:8px}
 .emg:active{transform:scale(.98)}
-.sos{background:#111827;color:#fff;font-weight:700;border-radius:14px;padding:0 16px}
+.sos{background:var(--red);color:#fff;font-weight:800;font-size:1.05em;letter-spacing:.04em;border-radius:14px;padding:0 18px;min-width:84px;box-shadow:0 4px 14px rgba(220,38,38,.35)}
+.sos:active{transform:scale(.98)}
+body.police .emg{background:#1d4ed8;box-shadow:0 4px 14px rgba(29,78,216,.3)}body.medical .emg{background:#15803d;box-shadow:0 4px 14px rgba(21,128,61,.3)}body.safe .emg{background:#7e22ce;box-shadow:0 4px 14px rgba(126,34,206,.3)}
+.emg.busy{opacity:.75}
+#filt{display:none}#filt.open{display:block}
+body.police .loc .fbtn,body.safe .loc .fbtn{display:none}
+.loc .fbtn{border:1px solid var(--line);color:var(--ink);display:flex;align-items:center;gap:6px}
+.loc .fbtn.on{border-color:var(--teal);color:var(--teal);background:#f0fdfa}
+.fcount{background:var(--teal);color:#fff;border-radius:999px;font-size:.75em;min-width:18px;height:18px;padding:0 5px;display:none;place-items:center}.fcount.show{display:inline-grid}
 .who{display:flex;gap:6px;margin-top:10px;overflow-x:auto}
 .who button{flex:1;min-width:76px;border:2px solid var(--line);border-radius:12px;padding:8px 4px;font-size:.85em;background:#fff;display:flex;flex-direction:column;align-items:center;gap:2px}
 .who button span{font-size:1.4em}
@@ -694,10 +702,10 @@ header .hb{background:rgba(255,255,255,.16);border-radius:8px;padding:6px 10px;f
 .chip{white-space:nowrap;border:1px solid var(--line);border-radius:999px;padding:6px 12px;font-size:.82em;background:#fff}
 .chip.on{background:var(--teal);border-color:var(--teal);color:#fff}
 .loc{display:flex;gap:6px;margin-top:8px;align-items:center}
-.loc select{flex:1;font:inherit;font-size:.9em;padding:8px;border:1px solid var(--line);border-radius:10px;background:#fff}
+.loc select{flex:1 1 0;min-width:0;text-overflow:ellipsis;font:inherit;font-size:.9em;padding:8px;border:1px solid var(--line);border-radius:10px;background:#fff}
 .loc button{border:1px solid var(--teal);color:var(--teal);border-radius:10px;padding:8px 10px;font-size:.9em;font-weight:600;white-space:nowrap}
 main{flex:1;display:flex;flex-direction:column;min-height:0}
-#map{height:38vh;min-height:220px;background:#e5e7eb;position:relative}
+#map{height:28vh;min-height:180px;background:#e5e7eb;position:relative}
 .tabs{display:flex;background:#fff;border-bottom:1px solid var(--line)}
 .tabs button{flex:1;padding:10px;font-size:.9em;color:var(--mut);border-bottom:3px solid transparent}
 .tabs button.on{color:var(--teal);border-color:var(--teal);font-weight:600}
@@ -774,6 +782,7 @@ header h1{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;
     <button class="emg" id="emgBtn">⚡ <span id="emgTxt">I need a toilet NOW</span></button>
     <button class="sos" id="sosBtn">SOS</button>
   </div>
+  <div id="filt">
   <div class="who toilet-only" id="who">
     <button data-who="any" class="on"><span>🧑</span><b data-t="any">Anyone</b></button>
     <button data-who="woman"><span>👩</span><b data-t="woman">Woman</b></button>
@@ -796,6 +805,7 @@ header h1{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;
     <button class="chip" data-m="h24">🌙 24 hrs</button>
     <button class="chip" data-m="emergency">🚑 Casualty / emergency</button>
   </div>
+  </div>
   <div class="chips safe-only" id="safeChips">
     <button class="chip" data-s="h24">✅ Confirmed 24 hrs</button>
     <button class="chip" data-s="staffed">👮 Police & hospitals only</button>
@@ -804,6 +814,7 @@ header h1{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;
   <div class="loc">
     <select id="area"></select>
     <button id="gpsBtn">📍 <span data-t="gps">My location</span></button>
+    <button class="fbtn" id="filtBtn" aria-expanded="false" aria-controls="filt">⚙️ <span data-t="filters">Filters</span><span class="fcount" id="fCount"></span></button>
   </div>
 </div>
 
@@ -873,11 +884,11 @@ const store={get(k,d){try{const v=localStorage.getItem("ss_"+k);return v?JSON.pa
 
 /* ---------- i18n ---------- */
 const T={
-en:{app:"SafeStop Mumbai",t_route:"Route",m_safe:"Safe spot",emg_s:"Find a safe spot NOW",near_s:"Nearest safe spot",m_med:"Medical",emg_m:"Nearest hospital / medical NOW",near_m:"Nearest medical help",call_p:"Call",m_toilet:"Toilets",m_police:"Police",emg_p:"Nearest police station NOW",near_p:"Nearest police station",call:"Call station",emg:"I need a toilet NOW",any:"Anyone",woman:"Woman",elder:"Elderly",child:"Child",f_women:"♀ Women's",f_access:"♿ Accessible",f_baby:"🍼 Baby change",f_free:"₹0 Free",f_24:"🌙 24 hrs",f_west:"🚽 Western seat",f_backup:"⛽ Show backups",gps:"My location",t_list:"Nearby",t_saved:"Saved ⭐",t_add:"+ Add",t_info:"Me",go:"Start walking directions",near:"Nearest toilet",walk:"min walk",save:"Save toilet",usehere:"Use my current spot",name:"Name / landmark",pinloc:"Location",
+en:{app:"SafeStop Mumbai",t_route:"Route",m_safe:"Safe spot",emg_s:"Find a safe spot NOW",near_s:"Nearest safe spot",m_med:"Medical",emg_m:"Nearest hospital / medical NOW",near_m:"Nearest medical help",call_p:"Call",m_toilet:"Toilets",m_police:"Police",emg_p:"Nearest police station NOW",near_p:"Nearest police station",call:"Call station",emg:"I need a toilet NOW",any:"Anyone",woman:"Woman",elder:"Elderly",child:"Child",f_women:"♀ Women's",f_access:"♿ Accessible",f_baby:"🍼 Baby change",f_free:"₹0 Free",f_24:"🌙 24 hrs",f_west:"🚽 Western seat",f_backup:"⛽ Show backups",gps:"My location",filters:"Filters",t_list:"Nearby",t_saved:"Saved ⭐",t_add:"+ Add",t_info:"Me",go:"Start walking directions",near:"Nearest toilet",walk:"min walk",save:"Save toilet",usehere:"Use my current spot",name:"Name / landmark",pinloc:"Location",
  add_tip:"Know a toilet that isn't listed? Tap on the map to drop a pin (or use your current spot), fill in what you know and save it. It is shared with everyone using SafeStop."},
-hi:{app:"सेफस्टॉप मुंबई",t_route:"रास्ता",m_safe:"सुरक्षित जगह",emg_s:"अभी सुरक्षित जगह खोजें",near_s:"सबसे पास की सुरक्षित जगह",m_med:"मेडिकल",emg_m:"सबसे पास का अस्पताल / मेडिकल",near_m:"सबसे पास की मेडिकल मदद",call_p:"कॉल करें",m_toilet:"शौचालय",m_police:"पुलिस",emg_p:"सबसे पास का पुलिस स्टेशन",near_p:"सबसे पास का पुलिस स्टेशन",call:"स्टेशन को कॉल करें",emg:"मुझे अभी शौचालय चाहिए",any:"कोई भी",woman:"महिला",elder:"बुज़ुर्ग",child:"बच्चा",f_women:"♀ महिलाओं के लिए",f_access:"♿ व्हीलचेयर",f_baby:"🍼 बेबी चेंजिंग",f_free:"₹0 मुफ़्त",f_24:"🌙 24 घंटे",f_west:"🚽 वेस्टर्न सीट",f_backup:"⛽ विकल्प दिखाएँ",gps:"मेरी लोकेशन",t_list:"आस-पास",t_saved:"सेव ⭐",t_add:"+ जोड़ें",t_info:"मैं",go:"पैदल रास्ता दिखाएँ",near:"सबसे पास का शौचालय",walk:"मिनट पैदल",save:"सेव करें",usehere:"मेरी जगह इस्तेमाल करें",name:"नाम / पहचान",pinloc:"जगह",
+hi:{app:"सेफस्टॉप मुंबई",t_route:"रास्ता",m_safe:"सुरक्षित जगह",emg_s:"अभी सुरक्षित जगह खोजें",near_s:"सबसे पास की सुरक्षित जगह",m_med:"मेडिकल",emg_m:"सबसे पास का अस्पताल / मेडिकल",near_m:"सबसे पास की मेडिकल मदद",call_p:"कॉल करें",m_toilet:"शौचालय",m_police:"पुलिस",emg_p:"सबसे पास का पुलिस स्टेशन",near_p:"सबसे पास का पुलिस स्टेशन",call:"स्टेशन को कॉल करें",emg:"मुझे अभी शौचालय चाहिए",any:"कोई भी",woman:"महिला",elder:"बुज़ुर्ग",child:"बच्चा",f_women:"♀ महिलाओं के लिए",f_access:"♿ व्हीलचेयर",f_baby:"🍼 बेबी चेंजिंग",f_free:"₹0 मुफ़्त",f_24:"🌙 24 घंटे",f_west:"🚽 वेस्टर्न सीट",f_backup:"⛽ विकल्प दिखाएँ",gps:"मेरी लोकेशन",filters:"फ़िल्टर",t_list:"आस-पास",t_saved:"सेव ⭐",t_add:"+ जोड़ें",t_info:"मैं",go:"पैदल रास्ता दिखाएँ",near:"सबसे पास का शौचालय",walk:"मिनट पैदल",save:"सेव करें",usehere:"मेरी जगह इस्तेमाल करें",name:"नाम / पहचान",pinloc:"जगह",
  add_tip:"कोई शौचालय सूची में नहीं है? मैप पर टैप करके पिन लगाएँ, जानकारी भरें और सेव करें। यह सभी SafeStop यूज़र्स को दिखेगा।"},
-mr:{app:"सेफस्टॉप मुंबई",t_route:"मार्ग",m_safe:"सुरक्षित जागा",emg_s:"आत्ता सुरक्षित जागा शोधा",near_s:"सर्वात जवळची सुरक्षित जागा",m_med:"मेडिकल",emg_m:"सर्वात जवळचे हॉस्पिटल / मेडिकल",near_m:"सर्वात जवळची वैद्यकीय मदत",call_p:"कॉल करा",m_toilet:"शौचालय",m_police:"पोलीस",emg_p:"सर्वात जवळचे पोलीस स्टेशन",near_p:"सर्वात जवळचे पोलीस स्टेशन",call:"स्टेशनला कॉल करा",emg:"मला आत्ता शौचालय हवे",any:"कोणीही",woman:"महिला",elder:"ज्येष्ठ",child:"मूल",f_women:"♀ महिलांसाठी",f_access:"♿ व्हीलचेअर",f_baby:"🍼 बेबी चेंजिंग",f_free:"₹0 मोफत",f_24:"🌙 24 तास",f_west:"🚽 वेस्टर्न सीट",f_backup:"⛽ पर्याय दाखवा",gps:"माझे ठिकाण",t_list:"जवळपास",t_saved:"सेव्ह ⭐",t_add:"+ जोडा",t_info:"मी",go:"चालत जाण्याचा मार्ग",near:"सर्वात जवळचे शौचालय",walk:"मिनिटे चालत",save:"सेव्ह करा",usehere:"माझे ठिकाण वापरा",name:"नाव / खूण",pinloc:"ठिकाण",
+mr:{app:"सेफस्टॉप मुंबई",t_route:"मार्ग",m_safe:"सुरक्षित जागा",emg_s:"आत्ता सुरक्षित जागा शोधा",near_s:"सर्वात जवळची सुरक्षित जागा",m_med:"मेडिकल",emg_m:"सर्वात जवळचे हॉस्पिटल / मेडिकल",near_m:"सर्वात जवळची वैद्यकीय मदत",call_p:"कॉल करा",m_toilet:"शौचालय",m_police:"पोलीस",emg_p:"सर्वात जवळचे पोलीस स्टेशन",near_p:"सर्वात जवळचे पोलीस स्टेशन",call:"स्टेशनला कॉल करा",emg:"मला आत्ता शौचालय हवे",any:"कोणीही",woman:"महिला",elder:"ज्येष्ठ",child:"मूल",f_women:"♀ महिलांसाठी",f_access:"♿ व्हीलचेअर",f_baby:"🍼 बेबी चेंजिंग",f_free:"₹0 मोफत",f_24:"🌙 24 तास",f_west:"🚽 वेस्टर्न सीट",f_backup:"⛽ पर्याय दाखवा",gps:"माझे ठिकाण",filters:"फिल्टर",t_list:"जवळपास",t_saved:"सेव्ह ⭐",t_add:"+ जोडा",t_info:"मी",go:"चालत जाण्याचा मार्ग",near:"सर्वात जवळचे शौचालय",walk:"मिनिटे चालत",save:"सेव्ह करा",usehere:"माझे ठिकाण वापरा",name:"नाव / खूण",pinloc:"ठिकाण",
  add_tip:"यादीत नसलेले शौचालय माहीत आहे? नकाशावर टॅप करून पिन लावा, माहिती भरा आणि सेव्ह करा. हे सर्व SafeStop वापरकर्त्यांना दिसेल."}};
 let lang=store.get("lang","en");
 const t=k=>(T[lang]&&T[lang][k])||T.en[k]||k;
@@ -886,7 +897,7 @@ function applyLang(){const et=document.getElementById('emgTxt');if(et)et.textCon
 /* ---------- areas ---------- */
 const AREAS=[["CSMT / Fort",18.9400,72.8353],["Colaba",18.9067,72.8147],["Marine Drive / Churchgate",18.9440,72.8235],["Lower Parel",18.9953,72.8302],["Dadar",19.0178,72.8478],["Sion",19.0390,72.8619],["Bandra",19.0596,72.8295],["Kurla",19.0726,72.8845],["Chembur",19.0522,72.9005],["Ghatkopar",19.0860,72.9081],["Vile Parle",19.0990,72.8492],["Juhu",19.1075,72.8263],["Andheri",19.1197,72.8468],["Powai",19.1176,72.9060],["Goregaon",19.1663,72.8526],["Malad",19.1874,72.8484],["Mulund",19.1726,72.9425],["Borivali",19.2307,72.8567],["Thane",19.2183,72.9781],["Vashi",19.0771,72.9986]];
 const areaSel=document.getElementById("area");
-areaSel.innerHTML='<option value="">📌 Choose area…</option>'+AREAS.map((a,i)=>`<option value="${i}">${a[0]}</option>`).join("");
+areaSel.innerHTML='<option value="">📌 Area…</option>'+AREAS.map((a,i)=>`<option value="${i}">${a[0]}</option>`).join("");
 
 /* ---------- state ---------- */
 const medF=new Set();
@@ -960,7 +971,7 @@ function pinIcon(p){if(p.kind==="safe")return L.divIcon({className:"",html:`<div
 function setMe(lat,lon,label){
   me={lat,lon,label};
   if(map){ if(meMarker)meMarker.remove(); meMarker=L.marker([lat,lon],{icon:L.divIcon({className:"",html:'<div class="me"></div>',iconSize:[18,18]})}).addTo(map); map.setView([lat,lon],15) }
-  load();
+  return load();
 }
 
 /* ---------- data: OpenStreetMap via Overpass ---------- */
@@ -1257,8 +1268,15 @@ function openPolice(p){
 async function copy(txt){try{await navigator.clipboard.writeText(txt);toast("Copied – paste it in WhatsApp/SMS")}catch(e){sheet(`<h2>Share</h2><div class="copybox">${esc(txt)}</div><a class="btn wa" href="https://wa.me/?text=${encodeURIComponent(txt)}" target="_blank" rel="noopener">Send on WhatsApp</a>`)}}
 
 /* ---------- emergency ---------- */
+let locating=false;
 function emergency(){
-  if(!me){ gps(true); return }
+  if(locating)return;
+  // In an emergency use the phone's real position, not the centre of a chosen area.
+  if((!me||me.label!=="you")&&navigator.geolocation){ gps(true); return }
+  if(!me){ toast("Location not available – please choose your area");areaSel.focus();return }
+  showEmergency();
+}
+function showEmergency(){
   if(mode==="police")return emergencyPolice();
   if(mode==="medical")return emergencyMed();
   if(mode==="safe")return emergencySafe();
@@ -1322,9 +1340,16 @@ function sos(){
 /* ---------- GPS ---------- */
 function gps(thenEmg){
   if(!navigator.geolocation){toast("Location not available – please choose your area");areaSel.focus();return}
-  toast("Finding your location…");
-  navigator.geolocation.getCurrentPosition(pos=>{areaSel.value="";setMe(pos.coords.latitude,pos.coords.longitude,"you");if(thenEmg)setTimeout(emergency,2500)},
-   ()=>{toast("Location blocked – please choose your area from the list");areaSel.focus()},{enableHighAccuracy:true,timeout:10000,maximumAge:60000});
+  const eb=$("emgBtn"), done=()=>{locating=false;eb.classList.remove("busy");eb.removeAttribute("aria-busy")};
+  if(thenEmg){locating=true;eb.classList.add("busy");eb.setAttribute("aria-busy","true")}
+  toast(thenEmg?"Finding the nearest one to you…":"Finding your location…");
+  navigator.geolocation.getCurrentPosition(async pos=>{areaSel.value="";store.set("area","");
+      const m=mode; try{await setMe(pos.coords.latitude,pos.coords.longitude,"you")}catch(e){}
+      done(); if(thenEmg&&mode===m)showEmergency()},
+   ()=>{done();
+      if(thenEmg&&me){toast("Location blocked – showing results for "+(me.label||"your area"));showEmergency()}
+      else{toast("Location blocked – please choose your area from the list");areaSel.focus()}},
+   {enableHighAccuracy:true,timeout:10000,maximumAge:60000});
 }
 
 /* ---------- add toilet ---------- */
@@ -1353,7 +1378,12 @@ $("p-info").innerHTML=`
 /* ---------- wiring ---------- */
 let currentTab="list";
 document.querySelectorAll(".tabs button").forEach(b=>b.onclick=()=>{currentTab=b.dataset.tab;document.querySelectorAll(".tabs button").forEach(x=>x.classList.toggle("on",x===b));document.querySelectorAll(".pane").forEach(p=>p.classList.toggle("on",p.id==="p-"+currentTab));if(currentTab==="add")toast("Tap on the map to place the "+(mode==="safe"?"safe spot":mode==="police"?"police station":mode==="medical"?"hospital / medical store":"toilet"))});
-function syncChips(){document.querySelectorAll("#chips .chip").forEach(c=>c.classList.toggle("on",filters.has(c.dataset.f)))}
+function syncChips(){document.querySelectorAll("#chips .chip").forEach(c=>c.classList.toggle("on",filters.has(c.dataset.f)));updFilt()}
+function updFilt(){const n=mode==="medical"?medF.size:mode==="toilet"||!mode?filters.size+(who&&who!=="any"&&!(who==="woman"&&filters.has("women"))?1:0):0;
+  const c=$("fCount");c.textContent=n;c.classList.toggle("show",n>0)}
+function setFilt(open){$("filt").classList.toggle("open",open);$("filtBtn").classList.toggle("on",open);$("filtBtn").setAttribute("aria-expanded",open);store.set("filtOpen",open);setTimeout(()=>map&&map.invalidateSize(),50)}
+$("filtBtn").onclick=()=>setFilt(!$("filt").classList.contains("open"));
+$("filt").addEventListener("click",()=>setTimeout(updFilt,0));
 document.querySelectorAll("#chips .chip").forEach(c=>c.onclick=()=>{const f=c.dataset.f;filters.has(f)?filters.delete(f):filters.add(f);syncChips();f==="backup"?load():render()});
 document.querySelectorAll("#who button").forEach(b=>b.onclick=()=>{who=b.dataset.who;store.set("who",who);document.querySelectorAll("#who button").forEach(x=>x.classList.toggle("on",x===b));
   filters.delete("women");filters.delete("access");filters.delete("baby");
@@ -1371,7 +1401,7 @@ function setMode(m){mode=m;store.set("mode",m);document.body.classList.toggle("p
   $("addTip").textContent=m==="safe"?"Know a place that stays open and busy at night (a 24-hr shop, petrol pump, chowki)? Tap the map to drop a pin, pick the type and save. It's shared with everyone using SafeStop.":m==="medical"?"Know a hospital, clinic or medical store that isn't listed? Tap the map to drop a pin (or use your current spot), choose the type, add a phone and save. It's shared with everyone using SafeStop.":m==="police"?"Know a police station or chowki that isn't listed? Tap the map to drop a pin (or use your current spot), add its name and phone, and save. It's shared with everyone using SafeStop.":t("add_tip");
   $("saveBtn").textContent=m==="safe"?"Save safe spot":m==="police"?"Save police station":m==="medical"?"Save place":"Save toilet";
   try{document.querySelector('meta[name=theme-color]').setAttribute("content",m==="safe"?"#581c87":m==="police"?"#1e3a8a":m==="medical"?"#166534":"#0f766e")}catch(e){}
-  applyLang(); if(me)load(); else render();}
+  applyLang(); updFilt(); if(me)load(); else render();}
 document.querySelectorAll("#modes button").forEach(b=>b.onclick=()=>setMode(b.dataset.mode));
 document.querySelectorAll("#safeChips .chip").forEach(c=>c.onclick=()=>{const f=c.dataset.s;safeF.has(f)?safeF.delete(f):safeF.add(f);c.classList.toggle("on",safeF.has(f));render()});
 document.querySelectorAll("#medChips .chip").forEach(c=>c.onclick=()=>{const f=c.dataset.m;medF.has(f)?medF.delete(f):medF.add(f);c.classList.toggle("on",medF.has(f));render()});
@@ -1659,7 +1689,12 @@ initMap(); setMode(mode);
 const w=store.get("who","any"); const wb=document.querySelector(`#who [data-who="${w}"]`); if(wb)wb.click();
 const lastArea=store.get("area","");
 if(lastArea!==""&&AREAS[lastArea]){areaSel.value=lastArea;setMe(AREAS[lastArea][1],AREAS[lastArea][2],AREAS[lastArea][0])}
-else if(navigator.permissions&&navigator.geolocation){navigator.permissions.query({name:"geolocation"}).then(s=>{if(s.state==="granted")gps(false)}).catch(()=>{})}
+else if(navigator.geolocation){
+  // First visit: ask for location straight away so results show without any taps.
+  if(navigator.permissions)navigator.permissions.query({name:"geolocation"}).then(s=>{if(s.state!=="denied")gps(false)}).catch(()=>gps(false));
+  else gps(false);
+}
+setFilt(!!store.get("filtOpen",false)); updFilt();
 try{if("serviceWorker" in navigator&&location.protocol==="https:")navigator.serviceWorker.register("sw.js").catch(()=>{})}catch(e){}
 })();
 </script>
