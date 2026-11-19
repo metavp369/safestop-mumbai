@@ -48,7 +48,7 @@ document.getElementById("copy").onclick=async e=>{try{await navigator.clipboard.
   try{const res=await fetch("/api/report");if(!res.ok)throw new Error((await res.json().catch(()=>({}))).error||res.status);r=await res.json()}
   catch(e){sub.textContent="Report not available yet";main.innerHTML=`<div class="empty">The first report is created by the nightly worker (around 3 am). ${esc(e.message||"")}</div>`;return}
   const d=new Date(r.generatedAt);
-  sub.textContent=`Updated ${d.toLocaleString("en-IN",{dateStyle:"medium",timeStyle:"short"})} · ${d.areas.length} busy areas of Mumbai, Delhi, Gurgaon & Jaipur`;
+  sub.textContent=`Updated ${d.toLocaleString("en-IN",{dateStyle:"medium",timeStyle:"short"})} · ${d.areas.length} busy areas in 5 cities`;
   const A=r.areas||[], withT=A.filter(a=>a.toilets!=null);
   const tot=r.communityTotals||{};
   const maxT=Math.max(1,...withT.map(a=>a.toilets));
